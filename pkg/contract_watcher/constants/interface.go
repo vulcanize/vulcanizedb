@@ -20,19 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-// SupportsInterfaceABI is the basic abi needed to check which interfaces are adhered to
-var SupportsInterfaceABI = `[{"constant":true,"inputs":[{"name":"interfaceID","type":"bytes4"}],"name":"supportsInterface","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"}]`
-
-// Individual event interfaces for constructing ABI from
-var AddrChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"a","type":"address"}],"name":"AddrChanged","type":"event"}`
-var ContentChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes32"}],"name":"ContentChanged","type":"event"}`
-var NameChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"name","type":"string"}],"name":"NameChanged","type":"event"}`
-var AbiChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":true,"name":"contentType","type":"uint256"}],"name":"ABIChanged","type":"event"}`
-var PubkeyChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"x","type":"bytes32"},{"indexed":false,"name":"y","type":"bytes32"}],"name":"PubkeyChanged","type":"event"}`
-var TextChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"indexedKey","type":"string"},{"indexed":false,"name":"key","type":"string"}],"name":"TextChanged","type":"event"}`
-var MultihashChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes"}],"name":"MultihashChanged","type":"event"}`
-var ContenthashChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes"}],"name":"ContenthashChanged","type":"event"}`
-
 // Resolver interface signatures
 type Interface int
 
@@ -98,27 +85,6 @@ func (e Interface) EventSig() string {
 		"TextChanged(bytes32,string,string)",
 		"MultihashChanged(bytes32,bytes)",
 		"ContenthashChanged(bytes32,bytes)",
-	}
-
-	if e < MetaSig || e > ContentHashChangeSig {
-		return "Unknown"
-	}
-
-	return strings[e]
-}
-
-// MethodSig returns the method signature for an interface
-func (e Interface) MethodSig() string {
-	strings := [...]string{
-		"supportsInterface(bytes4)",
-		"addr(bytes32)",
-		"content(bytes32)",
-		"name(bytes32)",
-		"ABI(bytes32,uint256)",
-		"pubkey(bytes32)",
-		"text(bytes32,string)",
-		"multihash(bytes32)",
-		"setContenthash(bytes32,bytes)",
 	}
 
 	if e < MetaSig || e > ContentHashChangeSig {

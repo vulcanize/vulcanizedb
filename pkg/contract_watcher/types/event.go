@@ -40,7 +40,7 @@ type Field struct {
 
 // Log is used to hold instance of an event log data
 type Log struct {
-	ID               int64             // header ID
+	HeaderID         int64             // header ID
 	Values           map[string]string // Map of event input names to their values
 	LogIndex         uint
 	TransactionIndex uint

@@ -36,7 +36,6 @@ type HeaderRepository interface {
 	MarkHeaderCheckedForAll(headerID int64, ids []string) error
 	MarkHeadersCheckedForAll(headers []core.Header, ids []string) error
 	MissingHeaders(startingBlockNumber int64, endingBlockNumber int64, eventID string) ([]core.Header, error)
-	MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error)
 	MissingHeadersForAll(startingBlockNumber, endingBlockNumber int64, ids []string) ([]core.Header, error)
 	CheckCache(key string) (interface{}, bool)
 }
@@ -203,37 +202,6 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 		err = r.db.Select(&result, query, startingBlockNumber)
 	} else {
 		endStr := `) AND headers.block_number >= $1
-				  AND headers.block_number <= $2
-				  ORDER BY headers.block_number`
-		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber)
-	}
-	return continuousHeaders(result), err
-}
-
-// MissingMethodsCheckedEventsIntersection returns headers that have been checked for all of the provided event ids but not for the provided method ids
-func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error) {
-	var result []core.Header
-	var query string
-	var err error
-	baseQuery := `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				  LEFT JOIN checked_headers on headers.id = header_id
-				  WHERE (header_id IS NOT NULL`
-	for _, id := range eventIds {
-		baseQuery += ` AND ` + id + `!=0`
-	}
-	baseQuery += `) AND (`
-	for _, id := range methodIds {
-		baseQuery += id + ` =0 AND `
-	}
-	baseQuery = baseQuery[:len(baseQuery)-5] + `) `
-	if endingBlockNumber == -1 {
-		endStr := `AND headers.block_number >= $1
-				  ORDER BY headers.block_number`
-		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber)
-	} else {
-		endStr := `AND headers.block_number >= $1
 				  AND headers.block_number <= $2
 				  ORDER BY headers.block_number`
 		query = baseQuery + endStr

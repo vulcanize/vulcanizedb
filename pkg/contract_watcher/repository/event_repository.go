@@ -35,7 +35,7 @@ const (
 
 // EventRepository is used to persist event data into custom tables
 type EventRepository interface {
-	PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error
+	PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr string) error
 	CreateEventTable(contractAddr string, event types.Event) (bool, error)
 	CreateContractSchema(contractName string) (bool, error)
 	CheckSchemaCache(key string) (interface{}, bool)
@@ -62,7 +62,7 @@ func NewEventRepository(db *postgres.DB) EventRepository {
 // PersistLogs creates a schema for the contract if needed
 // Creates table for the watched contract event if needed
 // Persists converted event log data into this custom table
-func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
+func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr string) error {
 	if len(logs) == 0 {
 		return errors.New("event repository error: passed empty logs slice")
 	}
@@ -76,15 +76,11 @@ func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, c
 		return fmt.Errorf("error creating table for event %s on contract %s: %s", eventInfo.Name, contractAddr, tableErr.Error())
 	}
 
-	return r.persistLogs(logs, eventInfo, contractAddr, contractName)
-}
-
-func (r *eventRepository) persistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	return r.persistEventLogs(logs, eventInfo, contractAddr, contractName)
+	return r.persistEventLogs(logs, eventInfo, contractAddr)
 }
 
 // Creates a custom postgres command to persist logs for the given event (compatible with header synced vDB)
-func (r *eventRepository) persistEventLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
+func (r *eventRepository) persistEventLogs(logs []types.Log, eventInfo types.Event, contractAddr string) error {
 	tx, txErr := r.db.Beginx()
 	if txErr != nil {
 		return fmt.Errorf("error beginning db transaction: %s", txErr.Error())
@@ -93,14 +89,13 @@ func (r *eventRepository) persistEventLogs(logs []types.Log, eventInfo types.Eve
 	for _, event := range logs {
 		// Begin pg query string
 		pgStr := fmt.Sprintf("INSERT INTO cw_%s.%s_event ", strings.ToLower(contractAddr), strings.ToLower(eventInfo.Name))
-		pgStr = pgStr + "(header_id, token_name, raw_log, log_idx, tx_idx"
+		pgStr = pgStr + "(header_id, raw_log, log_idx, tx_idx"
 		el := len(event.Values)
 
 		// Preallocate slice of needed capacity and proceed to pack variables into it in same order they appear in string
-		data := make([]interface{}, 0, 5+el)
+		data := make([]interface{}, 0, 4+el)
 		data = append(data,
-			event.ID,
-			contractName,
+			event.HeaderID,
 			event.Raw,
 			event.LogIndex,
 			event.TransactionIndex)
@@ -112,9 +107,9 @@ func (r *eventRepository) persistEventLogs(logs []types.Log, eventInfo types.Eve
 		}
 
 		// For each input entry we created we add its postgres command variable to the string
-		pgStr = pgStr + ") VALUES ($1, $2, $3, $4, $5"
+		pgStr = pgStr + ") VALUES ($1, $2, $3, $4"
 		for i := 0; i < el; i++ {
-			pgStr = pgStr + fmt.Sprintf(", $%d", i+6)
+			pgStr = pgStr + fmt.Sprintf(", $%d", i+5)
 		}
 		pgStr = pgStr + ") ON CONFLICT DO NOTHING"
 
@@ -165,7 +160,7 @@ func (r *eventRepository) newEventTable(tableID string, event types.Event) error
 	// Begin pg string
 	var pgStr = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ", tableID)
 
-	pgStr = pgStr + "(id SERIAL, header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE, token_name CHARACTER VARYING(66) NOT NULL, raw_log JSONB, log_idx INTEGER NOT NULL, tx_idx INTEGER NOT NULL,"
+	pgStr = pgStr + "(id SERIAL, header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE, raw_log JSONB, log_idx INTEGER NOT NULL, tx_idx INTEGER NOT NULL,"
 
 	for _, field := range event.Fields {
 		pgStr = pgStr + fmt.Sprintf(" %s_ %s NOT NULL,", strings.ToLower(field.Name), field.PgType)

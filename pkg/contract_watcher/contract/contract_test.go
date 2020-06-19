@@ -18,7 +18,6 @@ package contract_test
 
 import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/contract"
-	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -29,7 +28,6 @@ var _ = Describe("Contract", func() {
 	Describe("IsEventAddr", func() {
 		BeforeEach(func() {
 			info = &contract.Contract{}
-			info.MethodArgs = map[string]bool{}
 			info.FilterArgs = map[string]bool{}
 		})
 
@@ -41,8 +39,6 @@ var _ = Describe("Contract", func() {
 			Expect(is).To(Equal(true))
 			is = info.WantedEventArg("testAddress2")
 			Expect(is).To(Equal(true))
-
-			info.MethodArgs["testAddress3"] = true
 			is = info.WantedEventArg("testAddress3")
 			Expect(is).To(Equal(false))
 		})
@@ -68,52 +64,6 @@ var _ = Describe("Contract", func() {
 			is := info.WantedEventArg("testAddress1")
 			Expect(is).To(Equal(false))
 			is = info.WantedEventArg("testAddress2")
-			Expect(is).To(Equal(false))
-		})
-	})
-
-	Describe("IsMethodAddr", func() {
-		BeforeEach(func() {
-			info = &contract.Contract{}
-			info.MethodArgs = map[string]bool{}
-			info.FilterArgs = map[string]bool{}
-		})
-
-		It("Returns true if address is in method address filter list", func() {
-			info.MethodArgs["testAddress1"] = true
-			info.MethodArgs["testAddress2"] = true
-
-			is := info.WantedMethodArg("testAddress1")
-			Expect(is).To(Equal(true))
-			is = info.WantedMethodArg("testAddress2")
-			Expect(is).To(Equal(true))
-
-			info.FilterArgs["testAddress3"] = true
-			is = info.WantedMethodArg("testAddress3")
-			Expect(is).To(Equal(false))
-		})
-
-		It("Returns true if method address filter list is empty (no filter)", func() {
-			is := info.WantedMethodArg("testAddress1")
-			Expect(is).To(Equal(true))
-			is = info.WantedMethodArg("testAddress2")
-			Expect(is).To(Equal(true))
-		})
-
-		It("Returns false if address is not in method address filter list", func() {
-			info.MethodArgs["testAddress1"] = true
-			info.MethodArgs["testAddress2"] = true
-
-			is := info.WantedMethodArg("testAddress3")
-			Expect(is).To(Equal(false))
-		})
-
-		It("Returns false if method address filter list is nil (block all)", func() {
-			info.MethodArgs = nil
-
-			is := info.WantedMethodArg("testAddress1")
-			Expect(is).To(Equal(false))
-			is = info.WantedMethodArg("testAddress2")
 			Expect(is).To(Equal(false))
 		})
 	})
@@ -167,37 +117,6 @@ var _ = Describe("Contract", func() {
 
 			pass := info.PassesEventFilter(mapping)
 			Expect(pass).To(Equal(false))
-		})
-	})
-
-	Describe("AddEmittedAddr", func() {
-		BeforeEach(func() {
-			info = &contract.Contract{}
-			info.FilterArgs = map[string]bool{}
-			info.MethodArgs = map[string]bool{}
-			info.Methods = []types.Method{}
-			info.EmittedAddrs = map[interface{}]bool{}
-		})
-
-		It("Adds address to list if it is on the method filter address list", func() {
-			info.MethodArgs["testAddress2"] = true
-			info.AddEmittedAddr("testAddress2")
-			b := info.EmittedAddrs["testAddress2"]
-			Expect(b).To(Equal(true))
-		})
-
-		It("Adds address to list if method filter is empty", func() {
-			info.AddEmittedAddr("testAddress2")
-			b := info.EmittedAddrs["testAddress2"]
-			Expect(b).To(Equal(true))
-		})
-
-		It("Does not add address to list if both filters are closed (nil)", func() {
-			info.FilterArgs = nil // close both
-			info.MethodArgs = nil
-			info.AddEmittedAddr("testAddress1")
-			b := info.EmittedAddrs["testAddress1"]
-			Expect(b).To(Equal(false))
 		})
 	})
 })

@@ -150,8 +150,6 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the storage.TransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
 	err := w.Execute()
 	if err != nil {
 		LogWithCommand.Fatalf("error executing storage watcher: %s", err.Error())
@@ -165,6 +163,9 @@ func watchEthContract(w *watcher.ContractWatcher, wg *sync.WaitGroup) {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		w.Execute()
+		err := w.Execute()
+		if err != nil {
+			LogWithCommand.Errorf("error executing contract watcher: %s", err.Error())
+		}
 	}
 }

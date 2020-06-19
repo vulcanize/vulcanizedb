@@ -21,7 +21,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/constants"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/parser"
-	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -46,13 +45,6 @@ var _ = Describe("Parser", func() {
 			expectedAbi, err := eth.ParseAbi(constants.DaiAbiString)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(parsedAbi).To(Equal(expectedAbi))
-
-			methods := mp.GetSelectMethods([]string{"balanceOf"})
-			Expect(len(methods)).To(Equal(1))
-			balOf := methods[0]
-			Expect(balOf.Name).To(Equal("balanceOf"))
-			Expect(len(balOf.Args)).To(Equal(1))
-			Expect(len(balOf.Return)).To(Equal(1))
 
 			events := mp.GetEvents([]string{"Transfer"})
 			_, ok := events["Mint"]
@@ -115,111 +107,6 @@ var _ = Describe("Parser", func() {
 
 			_, ok = events["Approval"]
 			Expect(ok).To(Equal(false))
-		})
-	})
-
-	Describe("GetSelectMethods", func() {
-		It("Parses and returns only methods specified in passed array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			methods := p.GetSelectMethods([]string{"balanceOf"})
-			Expect(len(methods)).To(Equal(1))
-
-			balOf := methods[0]
-			Expect(balOf.Name).To(Equal("balanceOf"))
-			Expect(len(balOf.Args)).To(Equal(1))
-			Expect(len(balOf.Return)).To(Equal(1))
-
-			abiTy := balOf.Args[0].Type.T
-			Expect(abiTy).To(Equal(abi.AddressTy))
-
-			pgTy := balOf.Args[0].PgType
-			Expect(pgTy).To(Equal("CHARACTER VARYING(66)"))
-
-			abiTy = balOf.Return[0].Type.T
-			Expect(abiTy).To(Equal(abi.UintTy))
-
-			pgTy = balOf.Return[0].PgType
-			Expect(pgTy).To(Equal("NUMERIC"))
-
-		})
-
-		It("Parses and returns methods in the order they were specified", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			selectMethods := p.GetSelectMethods([]string{"balanceOf", "allowance"})
-			Expect(len(selectMethods)).To(Equal(2))
-
-			balOf := selectMethods[0]
-			allow := selectMethods[1]
-
-			Expect(balOf.Name).To(Equal("balanceOf"))
-			Expect(allow.Name).To(Equal("allowance"))
-		})
-
-		It("Returns nil if given a nil or empty array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			var nilArr []types.Method
-			selectMethods := p.GetSelectMethods([]string{})
-			Expect(selectMethods).To(Equal(nilArr))
-			selectMethods = p.GetMethods(nil)
-			Expect(selectMethods).To(Equal(nilArr))
-		})
-
-	})
-
-	Describe("GetMethods", func() {
-		It("Parses and returns only methods specified in passed array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			methods := p.GetMethods([]string{"balanceOf"})
-			Expect(len(methods)).To(Equal(1))
-
-			balOf := methods[0]
-			Expect(balOf.Name).To(Equal("balanceOf"))
-			Expect(len(balOf.Args)).To(Equal(1))
-			Expect(len(balOf.Return)).To(Equal(1))
-
-			abiTy := balOf.Args[0].Type.T
-			Expect(abiTy).To(Equal(abi.AddressTy))
-
-			pgTy := balOf.Args[0].PgType
-			Expect(pgTy).To(Equal("CHARACTER VARYING(66)"))
-
-			abiTy = balOf.Return[0].Type.T
-			Expect(abiTy).To(Equal(abi.UintTy))
-
-			pgTy = balOf.Return[0].PgType
-			Expect(pgTy).To(Equal("NUMERIC"))
-
-		})
-
-		It("Returns nil if given a nil array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			var nilArr []types.Method
-			selectMethods := p.GetMethods(nil)
-			Expect(selectMethods).To(Equal(nilArr))
-		})
-
-		It("Returns every method if given an empty array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			selectMethods := p.GetMethods([]string{})
-			Expect(len(selectMethods)).To(Equal(25))
 		})
 	})
 })

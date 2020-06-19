@@ -104,7 +104,7 @@ To provide data for transformations, raw Ethereum data must first be synced into
 ### Data transformation
 Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it follows that there are different ways to transform this data. We've started by categorizing this into Generic and Custom transformers:
 
-- Generic Contract Transformer: Generic contract transformation can be done using a built-in command, `contractWatcher`, which transforms contract events provided the contract's ABI is available. It also provides some state variable coverage by automating polling of public methods, with some restrictions. `contractWatcher` is described further [here](documentation/generic-transformer.md).
+- Generic Contract Transformer: Generic contract transformation can be done using a built-in command, `contractWatcher`, which transforms contract events provided the contract's ABI is available. `contractWatcher` is described further [here](documentation/generic-transformer.md).
 
 - Custom Transformers: In many cases custom transformers will need to be written to provide more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write, build and run custom transformers as Go plugins can be found [here](documentation/custom-transformers.md).
 

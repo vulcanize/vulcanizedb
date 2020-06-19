@@ -22,7 +22,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/contract"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/parser"
-	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/poller"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/retriever"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
@@ -34,7 +33,7 @@ var _ = Describe("Transformer", func() {
 	var fakeAddress = "0x1234567890abcdef"
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.BlockRetriever{}
+			blockRetriever := &fakes.MockBlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -42,11 +41,7 @@ var _ = Describe("Transformer", func() {
 			fakeAbi := "fake_abi"
 			parsr.AbiToReturn = fakeAbi
 
-			pollr := &fakes.MockPoller{}
-			fakeContractName := "fake_contract_name"
-			pollr.ContractName = fakeContractName
-
-			t := getFakeTransformer(blockRetriever, parsr, pollr)
+			t := getFakeTransformer(blockRetriever, parsr)
 
 			err := t.Init()
 
@@ -57,14 +52,13 @@ var _ = Describe("Transformer", func() {
 
 			Expect(c.StartingBlock).To(Equal(firstBlock))
 			Expect(c.Abi).To(Equal(fakeAbi))
-			Expect(c.Name).To(Equal(fakeContractName))
 			Expect(c.Address).To(Equal(fakeAddress))
 		})
 
 		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
-			blockRetriever := &fakes.BlockRetriever{}
+			blockRetriever := &fakes.MockBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
-			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
 			err := t.Init()
 
@@ -75,7 +69,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Execute", func() {
 		It("Executes contract transformations", func() {
-			blockRetriever := &fakes.BlockRetriever{}
+			blockRetriever := &fakes.MockBlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -83,11 +77,7 @@ var _ = Describe("Transformer", func() {
 			fakeAbi := "fake_abi"
 			parsr.AbiToReturn = fakeAbi
 
-			pollr := &fakes.MockPoller{}
-			fakeContractName := "fake_contract_name"
-			pollr.ContractName = fakeContractName
-
-			t := getFakeTransformer(blockRetriever, parsr, pollr)
+			t := getFakeTransformer(blockRetriever, parsr)
 
 			err := t.Init()
 
@@ -98,14 +88,13 @@ var _ = Describe("Transformer", func() {
 
 			Expect(c.StartingBlock).To(Equal(firstBlock))
 			Expect(c.Abi).To(Equal(fakeAbi))
-			Expect(c.Name).To(Equal(fakeContractName))
 			Expect(c.Address).To(Equal(fakeAddress))
 		})
 
 		It("uses first block from config if vDB headers table has no rows", func() {
-			blockRetriever := &fakes.BlockRetriever{}
+			blockRetriever := &fakes.MockBlockRetriever{}
 			blockRetriever.FirstBlockErr = sql.ErrNoRows
-			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
 			err := t.Init()
 
@@ -113,9 +102,9 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("returns error if fetching first block fails for other reason", func() {
-			blockRetriever := &fakes.BlockRetriever{}
+			blockRetriever := &fakes.MockBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
-			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
 			err := t.Init()
 
@@ -125,12 +114,11 @@ var _ = Describe("Transformer", func() {
 	})
 })
 
-func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser, pollr poller.Poller) transformer.Transformer {
+func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser) transformer.Transformer {
 	return transformer.Transformer{
 		Parser:           parsr,
 		Retriever:        blockRetriever,
-		Poller:           pollr,
-		HeaderRepository: &fakes.MockCheckedHeaderRepository{},
+		HeaderRepository: &fakes.MockContractWatcherHeaderRepository{},
 		Contracts:        map[string]*contract.Contract{},
 		Config:           mocks.MockConfig,
 	}

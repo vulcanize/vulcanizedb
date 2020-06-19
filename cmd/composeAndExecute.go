@@ -87,8 +87,8 @@ The type of watcher that the transformer works with is specified using the
 type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
 (eth_storage), and a more generic interface for accepting contract_watcher pkg
-based transformers which can perform both event watching and public method 
-polling (eth_contract).
+based transformers which can perform event watching provided only a conctract
+address (eth_contract).
 
 Transformers of different types can be ran together in the same command using a 
 single config file or in separate command instances using different config files

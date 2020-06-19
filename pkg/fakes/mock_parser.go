@@ -44,14 +44,6 @@ func (*MockParser) ParsedAbi() abi.ABI {
 	return abi.ABI{}
 }
 
-func (*MockParser) GetMethods(wanted []string) []types.Method {
-	panic("implement me")
-}
-
-func (*MockParser) GetSelectMethods(wanted []string) []types.Method {
-	return []types.Method{}
-}
-
 func (parser *MockParser) GetEvents(wanted []string) map[string]types.Event {
 	return map[string]types.Event{parser.EventName: parser.Event}
 }

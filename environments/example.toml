@@ -20,7 +20,4 @@
             "Transfer",
             "Issue"
         ]
-        methods = [
-            "balanceOf"
-        ]
         startingBlock = 5197514

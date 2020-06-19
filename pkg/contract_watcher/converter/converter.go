@@ -30,25 +30,28 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 )
 
-// ConverterInterface is the interface for converting geth logs to our custom log type
-type ConverterInterface interface {
+// Converter is the interface for converting geth logs to our custom log type
+type Converter interface {
 	Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error)
 	ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error)
 	Update(info *contract.Contract)
 }
 
-// Converter is the underlying struct for the ConverterInterface
-type Converter struct {
+type converter struct {
 	ContractInfo *contract.Contract
 }
 
+func NewConverter() *converter {
+	return &converter{}
+}
+
 // Update is used to configure the converter with a specific contract
-func (c *Converter) Update(info *contract.Contract) {
+func (c *converter) Update(info *contract.Contract) {
 	c.ContractInfo = info
 }
 
 // Convert the given watched event log into a types.Log for the given event
-func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
+func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
 	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	returnLogs := make([]types.Log, 0, len(logs))
 	for _, log := range logs {
@@ -118,16 +121,8 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 				Values:           strValues,
 				Raw:              raw,
 				TransactionIndex: log.TxIndex,
-				ID:               headerID,
+				HeaderID:         headerID,
 			})
-
-			// Cache emitted values if their caching is turned on
-			if c.ContractInfo.EmittedAddrs != nil {
-				c.ContractInfo.AddEmittedAddr(seenAddrs...)
-			}
-			if c.ContractInfo.EmittedHashes != nil {
-				c.ContractInfo.AddEmittedHash(seenHashes...)
-			}
 		}
 	}
 
@@ -135,7 +130,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 }
 
 // ConvertBatch converts the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
-func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
+func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
 	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
 	for _, event := range events {
@@ -205,16 +200,8 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 						Values:           strValues,
 						Raw:              raw,
 						TransactionIndex: log.TxIndex,
-						ID:               headerID,
+						HeaderID:         headerID,
 					})
-
-					// Cache emitted values that pass the argument filter if their caching is turned on
-					if c.ContractInfo.EmittedAddrs != nil {
-						c.ContractInfo.AddEmittedAddr(seenAddrs...)
-					}
-					if c.ContractInfo.EmittedHashes != nil {
-						c.ContractInfo.AddEmittedHash(seenHashes...)
-					}
 				}
 			}
 		}

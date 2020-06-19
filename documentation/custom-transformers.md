@@ -21,7 +21,7 @@ Event Transformers: transform data derived from Ethereum log events
    * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registry)
    * [Example 3](https://github.com/vulcanize/ens_transformers/tree/master/transformers/resolver)
 
-Contract Transformers: transform data derived from Ethereum log events and use it to poll public contract methods
+Contract Transformers: transform data derived from Ethereum log events provided only a contract address
    * [Example 1](https://github.com/vulcanize/account_transformers)
    * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/domain_records)
 
@@ -148,7 +148,7 @@ The config provides information for composing a set of transformers from externa
          that fetches event logs from an ETH node
         - `eth_contract` indicates the transformer works with the [contract watcher](../libraries/shared/watcher/contract_watcher.go)
         that is made to work with [contract_watcher pkg](../pkg/contract_watcher)
-        based transformers which work with vDB to watch events and poll public methods ([example1](https://github.com/vulcanize/account_transformers/tree/master/transformers/account/light), [example2](https://github.com/vulcanize/ens_transformers/tree/working/transformers/domain_records))
+        based transformers which work with vDB to watch events provided only a contract address ([example1](https://github.com/vulcanize/account_transformers/tree/master/transformers/account/light), [example2](https://github.com/vulcanize/ens_transformers/tree/working/transformers/domain_records))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
         - this is to help isolate any potential conflicts between transformer migrations

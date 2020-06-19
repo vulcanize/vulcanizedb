@@ -34,7 +34,6 @@ var contractWatcherCmd = &cobra.Command{
 	Long: `Uses input contract address and event filters to watch events
 
 Expects an ethereum node to be running
-Expects an archival node synced into vulcanizeDB
 Requires a .toml config file:
 
   [database]
@@ -64,16 +63,7 @@ Requires a .toml config file:
 			"arg1",
 			"arg2"
 		]
-        methods = [
-            "method1",
-			"method2"
-        ]
-		methodArgs = [
-			"arg1",
-			"arg2"
-		]
         startingBlock = 4448566
-        piping = true
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
