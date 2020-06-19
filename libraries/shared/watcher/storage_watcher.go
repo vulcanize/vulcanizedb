@@ -28,6 +28,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,9 +47,10 @@ type StorageWatcher struct {
 	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
 	StorageDiffRepository     storage.DiffRepository
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
+	StatusWriter              fs.StatusWriter
 }
 
-func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64) StorageWatcher {
+func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter fs.StatusWriter) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]storage2.ITransformer)
@@ -69,9 +71,9 @@ func (watcher StorageWatcher) AddTransformers(initializers []storage2.Transforme
 }
 
 func (watcher StorageWatcher) Execute() error {
-	healthCheckErr := addStatusForHealthCheck([]byte("storage watcher starting\n"))
-	if healthCheckErr != nil {
-		return fmt.Errorf("error confirming health check: %w", healthCheckErr)
+	writeErr := watcher.StatusWriter.Write()
+	if writeErr != nil {
+		return fmt.Errorf("error confirming health check: %w", writeErr)
 	}
 
 	for {

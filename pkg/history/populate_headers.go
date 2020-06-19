@@ -27,7 +27,7 @@ import (
 func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		return 0, fmt.Errorf("error getting last block: %s", err.Error())
+		return 0, fmt.Errorf("error getting last block: %w", err)
 	}
 
 	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64())

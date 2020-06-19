@@ -15,8 +15,6 @@
 package fetcher_test
 
 import (
-	"os"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -38,6 +36,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		storagediffChan      chan types.RawDiff
 		subscription         *fakes.MockSubscription
 		errorChan            chan error
+		statusWriter         fakes.MockStatusWriter
 	)
 
 	Describe("StorageFetcher for the Old Geth Patch", func() {
@@ -45,7 +44,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
 			streamer = &mocks.MockStoragediffStreamer{ClientSubscription: subscription}
 			statediffPayloadChan = make(chan statediff.Payload, 1)
-			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.OldGethPatch)
+			statusWriter = fakes.MockStatusWriter{}
+			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.OldGethPatch, &statusWriter)
 			storagediffChan = make(chan types.RawDiff)
 			errorChan = make(chan error)
 		})
@@ -76,20 +76,11 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		})
 
 		Describe("when subscription established", func() {
-			AfterEach(func() {
-				err := os.Remove(fetcher.ConnectionFile)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
 			It("creates file for health check when connection established", func(done Done) {
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 				Eventually(func() bool {
-					info, err := os.Stat(fetcher.ConnectionFile)
-					if os.IsNotExist(err) {
-						return false
-					}
-					return !info.IsDir()
+					return statusWriter.WriteCalled
 				}).Should(BeTrue())
 				close(done)
 			})
@@ -186,7 +177,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			subscription = &fakes.MockSubscription{Errs: make(chan error)}
 			streamer = &mocks.MockStoragediffStreamer{ClientSubscription: subscription}
 			statediffPayloadChan = make(chan statediff.Payload, 1)
-			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.NewGethPatch)
+			statusWriter = fakes.MockStatusWriter{}
+			statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan, fetcher.NewGethPatch, &statusWriter)
 			storagediffChan = make(chan types.RawDiff)
 			errorChan = make(chan error)
 		})
@@ -217,20 +209,11 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		})
 
 		Describe("when subscription established", func() {
-			AfterEach(func() {
-				err := os.Remove(fetcher.ConnectionFile)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
 			It("creates file for health check when connection established", func(done Done) {
 				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 				Eventually(func() bool {
-					info, err := os.Stat(fetcher.ConnectionFile)
-					if os.IsNotExist(err) {
-						return false
-					}
-					return !info.IsDir()
+					return statusWriter.WriteCalled
 				}).Should(BeTrue())
 				close(done)
 			})

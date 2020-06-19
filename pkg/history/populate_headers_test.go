@@ -27,11 +27,12 @@ import (
 )
 
 var _ = Describe("Populating headers", func() {
-
 	var headerRepository *fakes.MockHeaderRepository
+	var statusWriter fakes.MockStatusWriter
 
 	BeforeEach(func() {
 		headerRepository = fakes.NewMockHeaderRepository()
+		statusWriter = fakes.MockStatusWriter{}
 	})
 
 	It("returns number of headers added", func() {
@@ -63,5 +64,16 @@ var _ = Describe("Populating headers", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(headersAdded).To(Equal(0))
+	})
+
+	It("Does not write a healthcheck file when the call to get the last block fails", func() {
+		blockChain := fakes.NewMockBlockChain()
+		blockChain.SetLastBlockError(fakes.FakeError)
+
+		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+		Expect(statusWriter.WriteCalled).To(BeFalse())
 	})
 })

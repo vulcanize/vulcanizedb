@@ -18,7 +18,6 @@ package fetcher_test
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -33,17 +32,19 @@ import (
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {
 	var (
-		errorsChannel  chan error
-		mockTailer     *fakes.MockTailer
-		diffsChannel   chan types.RawDiff
-		storageFetcher fetcher.CsvTailStorageFetcher
+		errorsChannel    chan error
+		mockTailer       *fakes.MockTailer
+		mockStatusWriter fakes.MockStatusWriter
+		diffsChannel     chan types.RawDiff
+		storageFetcher   fetcher.CsvTailStorageFetcher
 	)
 
 	BeforeEach(func() {
 		errorsChannel = make(chan error)
 		diffsChannel = make(chan types.RawDiff)
 		mockTailer = fakes.NewMockTailer()
-		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
+		mockStatusWriter = fakes.MockStatusWriter{}
+		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer, &mockStatusWriter)
 	})
 
 	It("adds error to errors channel if tailing file fails", func(done Done) {
@@ -56,20 +57,11 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 	})
 
 	Describe("when establishing connection succeeds", func() {
-		AfterEach(func() {
-			err := os.Remove(fetcher.ConnectionFile)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("creates file for health check when connection established", func(done Done) {
 			go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 
 			Eventually(func() bool {
-				info, err := os.Stat(fetcher.ConnectionFile)
-				if os.IsNotExist(err) {
-					return false
-				}
-				return !info.IsDir()
+				return mockStatusWriter.WriteCalled
 			}).Should(BeTrue())
 			close(done)
 		})

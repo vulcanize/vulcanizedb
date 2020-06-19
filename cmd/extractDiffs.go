@@ -34,6 +34,10 @@ func extractDiffs() {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
+	healthCheckFile := "/tmp/connection"
+	msg := []byte("geth storage fetcher connection established\n")
+	gethStatusWriter := fs.NewStatusWriter(healthCheckFile, msg)
+
 	// initialize fetcher
 	var storageFetcher fetcher.IStorageFetcher
 	switch storageDiffsSource {
@@ -43,18 +47,23 @@ func extractDiffs() {
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 		payloadChan := make(chan statediff.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch)
+
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch, gethStatusWriter)
 	case "new-geth":
 		logrus.Info("Using new geth patch")
 		logrus.Debug("fetching storage diffs from geth pub sub")
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 		payloadChan := make(chan statediff.Payload)
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatch)
+
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatch, gethStatusWriter)
 	default:
 		logrus.Debug("fetching storage diffs from csv")
 		tailer := fs.FileTailer{Path: storageDiffsPath}
-		storageFetcher = fetcher.NewCsvTailStorageFetcher(tailer)
+		msg := []byte("csv tail storage fetcher connection established\n")
+		statusWriter := fs.NewStatusWriter(healthCheckFile, msg)
+
+		storageFetcher = fetcher.NewCsvTailStorageFetcher(tailer, statusWriter)
 	}
 
 	// extract diffs

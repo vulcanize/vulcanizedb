@@ -16,12 +16,12 @@ package fetcher
 
 import (
 	"fmt"
-	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,13 +36,15 @@ type GethRpcStorageFetcher struct {
 	statediffPayloadChan chan statediff.Payload
 	streamer             streamer.Streamer
 	gethVersion          GethPatchVersion
+	statusWriter         fs.StatusWriter
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion) GethRpcStorageFetcher {
+func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion, statusWriter fs.StatusWriter) GethRpcStorageFetcher {
 	return GethRpcStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
 		streamer:             streamer,
 		gethVersion:          gethVersion,
+		statusWriter:         statusWriter,
 	}
 }
 
@@ -55,8 +57,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 	}
 	logrus.Info("Successfully created a geth client subscription: ", clientSubscription)
 
-	msg := []byte("geth storage fetcher connection established\n")
-	writeErr := ioutil.WriteFile(ConnectionFile, msg, 0644)
+	writeErr := fetcher.statusWriter.Write()
 	if writeErr != nil {
 		errs <- writeErr
 	}

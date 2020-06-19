@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"errors"
 	"math/rand"
-	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -35,11 +34,12 @@ import (
 )
 
 var _ = Describe("Storage Watcher", func() {
+	var statusWriter fakes.MockStatusWriter
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
 			fakeHashedAddress := types.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -62,28 +62,17 @@ var _ = Describe("Storage Watcher", func() {
 				StorageDiffRepository:     mockDiffsRepository,
 				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 				DiffBlocksFromHeadOfChain: -1,
+				StatusWriter:              &statusWriter,
 			}
 		})
 
-		AfterEach(func() {
-			err := os.Remove(watcher.HealthCheckFile)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("creates file for health check", func(done Done) {
+		It("creates file for health check", func() {
 			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
 			err := storageWatcher.Execute()
 
 			Expect(err).To(HaveOccurred())
-			Eventually(func() bool {
-				info, err := os.Stat(watcher.HealthCheckFile)
-				if os.IsNotExist(err) {
-					return false
-				}
-				return !info.IsDir()
-			}).Should(BeTrue())
-			close(done)
+			Expect(statusWriter.WriteCalled).To(BeTrue())
 		})
 
 		It("fetches diffs with results limit", func() {
@@ -166,6 +155,7 @@ var _ = Describe("Storage Watcher", func() {
 					StorageDiffRepository:     mockDiffsRepository,
 					KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
+					StatusWriter:              &statusWriter,
 				}
 				diffID := rand.Int()
 				for i := 0; i < watcher.ResultsLimit; i++ {

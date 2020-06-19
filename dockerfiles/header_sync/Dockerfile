@@ -42,5 +42,7 @@ COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 # needed for waiting until postgres is ready before starting from docker-compose
 COPY --from=builder /vulcanizedb/dockerfiles/wait-for-it.sh .
 
+HEALTHCHECK CMD test -f /tmp/header_sync_health_check
+
 # need to execute with a shell to access env variables
 CMD ["./startup_script.sh"]

@@ -26,6 +26,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -88,6 +89,7 @@ func executeTransformers() {
 	// Setup bc and db objects
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	healthCheckFile := "/tmp/execute_health_check"
 
 	// Execute over transformer sets returned by the exporter
 	// Use WaitGroup to wait on both goroutines
@@ -95,7 +97,9 @@ func executeTransformers() {
 	if len(ethEventInitializers) > 0 {
 		extractor := logs.NewLogExtractor(&db, blockChain)
 		delegator := logs.NewLogDelegator(&db)
-		ew := watcher.NewEventWatcher(&db, blockChain, extractor, delegator, maxUnexpectedErrors, retryInterval)
+		eventHealthCheckMessage := []byte("event watcher starting\n")
+		statusWriter := fs.NewStatusWriter(healthCheckFile, eventHealthCheckMessage)
+		ew := watcher.NewEventWatcher(&db, blockChain, extractor, delegator, maxUnexpectedErrors, retryInterval, statusWriter)
 		addErr := ew.AddTransformers(ethEventInitializers)
 		if addErr != nil {
 			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())
@@ -105,7 +109,9 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain)
+		storageHealthCheckMessage := []byte("storage watcher starting\n")
+		statusWriter := fs.NewStatusWriter(healthCheckFile, storageHealthCheckMessage)
+		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain, statusWriter)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)

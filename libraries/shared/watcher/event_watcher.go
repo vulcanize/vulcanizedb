@@ -26,10 +26,9 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 )
-
-var HealthCheckFile = "/tmp/execute_health_check"
 
 type EventWatcher struct {
 	blockChain                   core.BlockChain
@@ -40,9 +39,10 @@ type EventWatcher struct {
 	ExpectedDelegatorError       error
 	MaxConsecutiveUnexpectedErrs int
 	RetryInterval                time.Duration
+	StatusWriter                 fs.StatusWriter
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration) EventWatcher {
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration, statusWriter fs.StatusWriter) EventWatcher {
 	return EventWatcher{
 		blockChain:                   bc,
 		db:                           db,
@@ -52,6 +52,7 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExt
 		ExpectedDelegatorError:       logs.ErrNoLogs,
 		MaxConsecutiveUnexpectedErrs: maxConsecutiveUnexpectedErrs,
 		RetryInterval:                retryInterval,
+		StatusWriter:                 statusWriter,
 	}
 }
 
@@ -71,9 +72,9 @@ func (watcher *EventWatcher) AddTransformers(initializers []event.TransformerIni
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
-	healthCheckErr := addStatusForHealthCheck([]byte("event watcher starting\n"))
-	if healthCheckErr != nil {
-		return fmt.Errorf("error confirming health check: %w", healthCheckErr)
+	writeErr := watcher.StatusWriter.Write()
+	if writeErr != nil {
+		return fmt.Errorf("error confirming health check: %w", writeErr)
 	}
 
 	//only writers should close channels
