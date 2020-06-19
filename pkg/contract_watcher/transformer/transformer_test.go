@@ -43,7 +43,7 @@ var _ = Describe("Transformer", func() {
 
 			t := getFakeTransformer(blockRetriever, parsr)
 
-			err := t.Init()
+			err := t.Init("")
 
 			Expect(err).ToNot(HaveOccurred())
 
@@ -60,7 +60,7 @@ var _ = Describe("Transformer", func() {
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
-			err := t.Init()
+			err := t.Init("")
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
@@ -79,7 +79,7 @@ var _ = Describe("Transformer", func() {
 
 			t := getFakeTransformer(blockRetriever, parsr)
 
-			err := t.Init()
+			err := t.Init("")
 
 			Expect(err).ToNot(HaveOccurred())
 
@@ -96,7 +96,7 @@ var _ = Describe("Transformer", func() {
 			blockRetriever.FirstBlockErr = sql.ErrNoRows
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
-			err := t.Init()
+			err := t.Init("")
 
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -106,7 +106,7 @@ var _ = Describe("Transformer", func() {
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{})
 
-			err := t.Init()
+			err := t.Init("")
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))

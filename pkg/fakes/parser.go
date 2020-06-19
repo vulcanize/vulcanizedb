@@ -27,7 +27,7 @@ type MockParser struct {
 	Event       types.Event
 }
 
-func (*MockParser) Parse(contractAddr string) error {
+func (*MockParser) Parse(contractAddr, apiKey string) error {
 	return nil
 }
 

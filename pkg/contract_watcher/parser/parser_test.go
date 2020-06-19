@@ -58,7 +58,7 @@ var _ = Describe("Parser", func() {
 	Describe("Parse", func() {
 		It("Fetches and parses abi from etherscan using contract address", func() {
 			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359" // dai contract address
-			err = p.Parse(contractAddr)
+			err = p.Parse(contractAddr, "")
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedAbi := constants.DaiAbiString
@@ -71,7 +71,7 @@ var _ = Describe("Parser", func() {
 
 		It("Fails with a normal, non-contract, account address", func() {
 			addr := "0xAb2A8F7cB56D9EC65573BA1bE0f92Fa2Ff7dd165"
-			err = p.Parse(addr)
+			err = p.Parse(addr, "")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -79,7 +79,7 @@ var _ = Describe("Parser", func() {
 	Describe("GetEvents", func() {
 		It("Returns parsed events", func() {
 			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
+			err = p.Parse(contractAddr, "")
 			Expect(err).ToNot(HaveOccurred())
 
 			events := p.GetEvents([]string{"Transfer"})

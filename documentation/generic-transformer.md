@@ -1,7 +1,9 @@
 # Generic Transformer
-The `contractWatcher` command is a built-in generic contract watcher. It can watch events for a given contract provided the contract's ABI is available.
+The `contractWatcher` command is a built-in generic contract watcher.
+It can watch events for a given contract provided the contract's ABI is available.
 
 This command requires the contract ABI be available on Etherscan if it is not provided in the config file by the user.
+Optionally, pass a `--etherscan-api-key` (`-k`) flag to include your Etherscan API key when running this command, if looking up multiple ABIs.
 
 ## Configuration
 This command takes a config of the form:

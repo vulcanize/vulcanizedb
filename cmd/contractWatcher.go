@@ -27,6 +27,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var etherscanAPIKey string
+
 // contractWatcherCmd represents the contractWatcher command
 var contractWatcherCmd = &cobra.Command{
 	Use:   "contractWatcher",
@@ -64,6 +66,9 @@ Requires a .toml config file:
 			"arg2"
 		]
         startingBlock = 4448566
+
+Optionally, pass --etherscan-api-key (-k) to supply an Etherscan API
+to be used for ABI lookups.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
@@ -84,7 +89,7 @@ func contractWatcher() {
 
 	t := transformer.NewTransformer(con, blockChain, &db)
 
-	err := t.Init()
+	err := t.Init(etherscanAPIKey)
 	if err != nil {
 		LogWithCommand.Fatal(fmt.Sprintf("Failed to initialize transformer, err: %v ", err))
 	}
@@ -99,4 +104,5 @@ func contractWatcher() {
 
 func init() {
 	rootCmd.AddCommand(contractWatcherCmd)
+	contractWatcherCmd.Flags().StringVarP(&etherscanAPIKey, "etherscan-api-key", "k", "", "etherscan API key, for ABI lookups")
 }

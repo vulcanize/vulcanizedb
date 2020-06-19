@@ -60,7 +60,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			_, insertErrTwo := headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
 			Expect(insertErrTwo).NotTo(HaveOccurred())
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 
 			c, ok := t.Contracts[tusdAddr]
@@ -80,7 +80,7 @@ var _ = Describe("contractWatcher transformer", func() {
 
 		It("initializes when no headers available in db", func() {
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			testConf = test_helpers.TusdConfig
 			testConf.Addresses = nil
 			t := transformer.NewTransformer(testConf, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 
 			_, ok := t.Contracts[tusdAddr]
@@ -119,7 +119,7 @@ var _ = Describe("contractWatcher transformer", func() {
 
 		It("Transforms watched contract data into custom repositories", func() {
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -160,7 +160,7 @@ var _ = Describe("contractWatcher transformer", func() {
 
 		It("Transforms watched contract data into custom repositories", func() {
 			t := transformer.NewTransformer(test_helpers.ENSConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -183,7 +183,7 @@ var _ = Describe("contractWatcher transformer", func() {
 				ensAddr: {"fake_filter_value"},
 			}
 			t := transformer.NewTransformer(testConf, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -207,7 +207,7 @@ var _ = Describe("contractWatcher transformer", func() {
 
 		It("Transforms watched contract data into custom repositories", func() {
 			t := transformer.NewTransformer(test_helpers.ENSandTusdConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -232,7 +232,7 @@ var _ = Describe("contractWatcher transformer", func() {
 
 		It("Marks header checked for a contract that has no logs at that header", func() {
 			t := transformer.NewTransformer(test_helpers.ENSandTusdConfig, blockChain, db)
-			err = t.Init()
+			err = t.Init("")
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())

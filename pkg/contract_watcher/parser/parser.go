@@ -18,7 +18,6 @@ package parser
 
 import (
 	"errors"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/constants"
@@ -29,7 +28,7 @@ import (
 // Parser is used to fetch and parse contract ABIs
 // It is dependent on etherscan's api
 type Parser interface {
-	Parse(contractAddr string) error
+	Parse(contractAddr, apiKey string) error
 	ParseAbiStr(abiStr string) error
 	Abi() string
 	ParsedAbi() abi.ABI
@@ -63,7 +62,7 @@ func (p *parser) ParsedAbi() abi.ABI {
 
 // Parse retrieves and parses the abi string
 // for the given contract address
-func (p *parser) Parse(contractAddr string) error {
+func (p *parser) Parse(contractAddr, apiKey string) error {
 	// If the abi is one our locally stored abis, fetch
 	// TODO: Allow users to pass abis through config
 	knownAbi, err := p.lookUp(contractAddr)
@@ -73,7 +72,7 @@ func (p *parser) Parse(contractAddr string) error {
 		return err
 	}
 	// Try getting abi from etherscan
-	abiStr, err := p.client.GetAbi(contractAddr)
+	abiStr, err := p.client.GetAbi(contractAddr, apiKey)
 	if err != nil {
 		return err
 	}

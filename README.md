@@ -16,7 +16,9 @@
 ## Background
 The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by providing a suite of tools to ease the extraction and transformation of data into a more useful state, including allowing for exposing aggregate data from a suite of smart contracts.
 
-VulanizeDB includes processes that sync, transform and expose data. Syncing involves querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting data from VulcanizeDB's underlying Postgres database and making it accessible.
+VulcanizeDB includes processes that extract and transform data.
+Extracting involves querying an Ethereum node and persisting returned data into a Postgres database.
+Transforming takes that raw data and converts it into domain objects representing data from configured contract accounts.
 
 ![VulcanizeDB Overview Diagram](documentation/diagrams/vdb-overview.png)
 
@@ -95,31 +97,33 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
 
 ## Usage
 
-As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.
+VulcanizeDB's processes can be split into two categories: extracting and transforming data.
 
-### Data syncing
+### Extracting
 
-To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB. This is accomplished through the use of the `headerSync` command. This command is described in detail [here](documentation/data-syncing.md).
+Several commands extract raw Ethereum data to Postgres:
+- `headerSync` populates block headers into the `public.headers` table - more detail [here](documentation/data-syncing.md).
+- `execute` and `composeAndExecute` add configured event logs into the `public.event_logs` table.
+- `extractDiffs` pulls state diffs into the `public.storage_diff` table.
 
-### Data transformation
-Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it follows that there are different ways to transform this data. We've started by categorizing this into Generic and Custom transformers:
+### Transforming
+Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest.
+Since there are different types of data that may be useful for observing smart contracts, it follows that there are different ways to transform this data.
+We've started by categorizing this into Generic and Custom transformers:
 
-- Generic Contract Transformer: Generic contract transformation can be done using a built-in command, `contractWatcher`, which transforms contract events provided the contract's ABI is available. `contractWatcher` is described further [here](documentation/generic-transformer.md).
+- Generic Contract Transformer: Generic contract transformation can be done using a built-in command, `contractWatcher`, which transforms contract events provided the contract's ABI is available.
+`contractWatcher` is described further [here](documentation/generic-transformer.md).
 
-- Custom Transformers: In many cases custom transformers will need to be written to provide more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write, build and run custom transformers as Go plugins can be found [here](documentation/custom-transformers.md).
-
-### Exposing the data
-
-[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](documentation/postgraphile.md).
-
+- Custom Transformers: In many cases custom transformers will need to be written to provide more comprehensive coverage of contract data.
+In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories.
+Documentation on how to write, build and run custom transformers as Go plugins can be found [here](documentation/custom-transformers.md).
 
 ### Tests
 - Replace the empty `ipcPath` in the `environments/testing.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
     - Note: must be mainnet
-    - Note: integration tests require configuration with an archival node
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
-- `make test` and `make integrationtest` setup a clean `vulcanize_testing` db
+- `make test` and `make integrationtest` both setup a clean `vulcanize_testing` db
 
 
 ## Contributing

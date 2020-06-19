@@ -91,7 +91,7 @@ func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
 // Use this info to generate event filters
-func (tr *Transformer) Init() error {
+func (tr *Transformer) Init(apiKey string) error {
 	// Initialize internally configured transformer settings
 	tr.contractAddresses = make([]string, 0)      // Holds all contract addresses, for batch fetching of logs
 	tr.sortedEventIds = make(map[string][]string) // Map to sort event column ids by contract, for post fetch processing and persisting of logs
@@ -104,7 +104,7 @@ func (tr *Transformer) Init() error {
 		// Configure Abi
 		if tr.Config.Abis[contractAddr] == "" {
 			// If no abi is given in the config, this method will try fetching from internal look-up table and etherscan
-			parseErr := tr.Parser.Parse(contractAddr)
+			parseErr := tr.Parser.Parse(contractAddr, apiKey)
 			if parseErr != nil {
 				return fmt.Errorf("error parsing contract by address: %w", parseErr)
 			}
