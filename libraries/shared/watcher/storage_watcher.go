@@ -32,9 +32,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var ResultsLimit = 500
-
-var ErrHeaderMismatch = errors.New("header hash doesn't match between db and diff")
+var (
+	ErrHeaderMismatch = errors.New("header hash doesn't match between db and diff")
+	ReorgWindow       = 250
+	ResultsLimit      = 500
+)
 
 type IStorageWatcher interface {
 	AddTransformers(initializers []storage2.TransformerInitializer)
@@ -108,9 +110,9 @@ func (watcher StorageWatcher) getMinDiffID() (int, error) {
 }
 
 func (watcher StorageWatcher) transformDiffs() error {
-	minID, err := watcher.getMinDiffID()
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("error getting min diff ID: %w", err)
+	minID, minIDErr := watcher.getMinDiffID()
+	if minIDErr != nil && !errors.Is(minIDErr, sql.ErrNoRows) {
+		return fmt.Errorf("error getting min diff ID: %w", minIDErr)
 	}
 
 	for {
@@ -121,7 +123,7 @@ func (watcher StorageWatcher) transformDiffs() error {
 		for _, diff := range diffs {
 			transformErr := watcher.transformDiff(diff)
 			if transformErr != nil {
-				if errors.Is(transformErr, sql.ErrNoRows) || errors.Is(transformErr, types.ErrKeyNotFound) {
+				if isCommonTransformError(transformErr) {
 					logrus.Tracef("error transforming diff: %s", transformErr.Error())
 				} else {
 					logrus.Infof("error transforming diff: %s", transformErr.Error())
@@ -150,6 +152,9 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 
 	headerID, headerErr := watcher.getHeaderID(diff)
 	if headerErr != nil {
+		if errors.Is(headerErr, ErrHeaderMismatch) {
+			return watcher.handleDiffWithInvalidHeaderHash(diff)
+		}
 		return fmt.Errorf("error getting header for diff: %w", headerErr)
 	}
 	diff.HeaderID = headerID
@@ -183,4 +188,20 @@ func (watcher StorageWatcher) getHeaderID(diff types.PersistedDiff) (int64, erro
 		return 0, fmt.Errorf("%w: %s", ErrHeaderMismatch, details)
 	}
 	return header.Id, nil
+}
+
+func (watcher StorageWatcher) handleDiffWithInvalidHeaderHash(diff types.PersistedDiff) error {
+	maxBlock, maxBlockErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
+	if maxBlockErr != nil {
+		msg := "error getting max block while handling diff %d with invalid header hash: %w"
+		return fmt.Errorf(msg, diff.ID, maxBlockErr)
+	}
+	if diff.BlockHeight < int(maxBlock)-ReorgWindow {
+		return watcher.StorageDiffRepository.MarkChecked(diff.ID)
+	}
+	return nil
+}
+
+func isCommonTransformError(err error) bool {
+	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, types.ErrKeyNotFound)
 }
