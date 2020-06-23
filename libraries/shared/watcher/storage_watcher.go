@@ -62,6 +62,7 @@ func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter 
 		KeccakAddressTransformers: transformers,
 		StorageDiffRepository:     storageDiffRepository,
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
+		StatusWriter:              statusWriter,
 	}
 }
 

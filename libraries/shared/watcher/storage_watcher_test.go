@@ -57,13 +57,9 @@ var _ = Describe("Storage Watcher", func() {
 		BeforeEach(func() {
 			mockDiffsRepository = &mocks.MockStorageDiffRepository{}
 			mockHeaderRepository = &fakes.MockHeaderRepository{}
-			storageWatcher = watcher.StorageWatcher{
-				HeaderRepository:          mockHeaderRepository,
-				StorageDiffRepository:     mockDiffsRepository,
-				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
-				DiffBlocksFromHeadOfChain: -1,
-				StatusWriter:              &statusWriter,
-			}
+			storageWatcher = watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
+			storageWatcher.HeaderRepository = mockHeaderRepository
+			storageWatcher.StorageDiffRepository = mockDiffsRepository
 		})
 
 		It("creates file for health check", func() {
