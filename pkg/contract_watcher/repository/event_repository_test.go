@@ -36,23 +36,22 @@ import (
 )
 
 var _ = Describe("Repository", func() {
-	var db *postgres.DB
-	var dataStore repository.EventRepository
-	var err error
-	var logs []types.Log
-	var con *contract.Contract
-	var wantedEvents = []string{"Transfer"}
-	var wantedMethods = []string{"balanceOf"}
-	var event types.Event
-	var headerID int64
-	var mockLog1 = mocks.MockTransferLog1
-	var mockLog2 = mocks.MockTransferLog2
+	var (
+		db           *postgres.DB
+		dataStore    repository.EventRepository
+		logs         []types.Log
+		con          *contract.Contract
+		wantedEvents = []string{"Transfer"}
+		event        types.Event
+		headerID     int64
+		mockLog1     = mocks.MockTransferLog1
+		mockLog2     = mocks.MockTransferLog2
+	)
 
 	BeforeEach(func() {
-		db, con = test_helpers.SetupTusdRepo(wantedEvents, wantedMethods)
+		db, con = test_helpers.SetupTusdRepo(wantedEvents)
 
 		event = con.Events["Transfer"]
-		Expect(err).ToNot(HaveOccurred())
 		dataStore = repository.NewEventRepository(db)
 	})
 
@@ -120,11 +119,13 @@ var _ = Describe("Repository", func() {
 	})
 
 	Describe("PersistLogs", func() {
+		var err error
+
 		BeforeEach(func() {
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
 			Expect(err).ToNot(HaveOccurred())
-			c := converter.Converter{}
+			c := converter.NewConverter()
 			c.Update(con)
 			logs, err = c.Convert([]geth.Log{mockLog1, mockLog2}, event, headerID)
 			Expect(err).ToNot(HaveOccurred())
@@ -135,7 +136,7 @@ var _ = Describe("Repository", func() {
 			err = hr.AddCheckColumn(event.Name + "_" + con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+			err = dataStore.PersistLogs(logs, event, con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
 			var count int
@@ -147,7 +148,6 @@ var _ = Describe("Repository", func() {
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.transfer_event LIMIT 1", constants.TusdContractAddress)).StructScan(&scanLog)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(scanLog.HeaderID).To(Equal(headerID))
-			Expect(scanLog.TokenName).To(Equal("TrueUSD"))
 			Expect(scanLog.TxIndex).To(Equal(int64(110)))
 			Expect(scanLog.LogIndex).To(Equal(int64(1)))
 			Expect(scanLog.From).To(Equal("0x000000000000000000000000000000000000Af21"))
@@ -168,11 +168,11 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Successfully persist the two unique logs
-			err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+			err = dataStore.PersistLogs(logs, event, con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Try to insert the same logs again
-			err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+			err = dataStore.PersistLogs(logs, event, con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Show that no new logs were entered
@@ -188,11 +188,11 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Successfully persist first log
-			err = dataStore.PersistLogs([]types.Log{logs[0]}, event, con.Address, con.Name)
+			err = dataStore.PersistLogs([]types.Log{logs[0]}, event, con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Successfully persist second log even though first already persisted
-			err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+			err = dataStore.PersistLogs(logs, event, con.Address)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Show that both logs were entered
@@ -203,7 +203,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("Fails with empty log", func() {
-			err = dataStore.PersistLogs([]types.Log{}, event, con.Address, con.Name)
+			err = dataStore.PersistLogs([]types.Log{}, event, con.Address)
 			Expect(err).To(HaveOccurred())
 		})
 	})

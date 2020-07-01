@@ -67,9 +67,14 @@ func GenURL(network string) string {
 }
 
 //https://api.etherscan.io/api?module=contract&action=getabi&address=%s
-func (e *EtherScanAPI) GetAbi(contractHash string) (string, error) {
+func (e *EtherScanAPI) GetAbi(contractAddress, apiKey string) (string, error) {
 	target := new(Response)
-	request := fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s", e.url, contractHash)
+	var request string
+	if apiKey != "" {
+		request = fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s&apikey=%s", e.url, contractAddress, apiKey)
+	} else {
+		request = fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s", e.url, contractAddress)
+	}
 	r, err := e.client.Get(request)
 	if err != nil {
 		return "", ErrApiRequestFailed

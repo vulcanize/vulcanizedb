@@ -31,19 +31,16 @@ import (
 )
 
 var _ = Describe("Repository", func() {
-	var db *postgres.DB
-	var contractHeaderRepo repository.HeaderRepository // contract_watcher header repository
-	var coreHeaderRepo datastore.HeaderRepository      // pkg/datastore header repository
-	var eventIDs = []string{
-		"eventName_contractAddr",
-		"eventName_contractAddr2",
-		"eventName_contractAddr3",
-	}
-	var methodIDs = []string{
-		"methodName_contractAddr",
-		"methodName_contractAddr2",
-		"methodName_contractAddr3",
-	}
+	var (
+		db                 *postgres.DB
+		contractHeaderRepo repository.HeaderRepository // contract_watcher header repository
+		coreHeaderRepo     datastore.HeaderRepository  // pkg/datastore header repository
+		eventIDs           = []string{
+			"eventName_contractAddr",
+			"eventName_contractAddr2",
+			"eventName_contractAddr3",
+		}
+	)
 
 	BeforeEach(func() {
 		db, _ = test_helpers.SetupDBandBC()
@@ -309,38 +306,6 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(0))
 			}
-		})
-	})
-
-	Describe("MissingMethodsCheckedEventsIntersection", func() {
-		It("Returns headers that have been checked for all the provided events but have not been checked for all the provided methods", func() {
-			addHeaders(coreHeaderRepo)
-			for i, id := range eventIDs {
-				err := contractHeaderRepo.AddCheckColumn(id)
-				Expect(err).ToNot(HaveOccurred())
-				err = contractHeaderRepo.AddCheckColumn(methodIDs[i])
-				Expect(err).ToNot(HaveOccurred())
-			}
-
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(missingHeaders)).To(Equal(3))
-
-			headerID := missingHeaders[0].Id
-			headerID2 := missingHeaders[1].Id
-			for i, id := range eventIDs {
-				err = contractHeaderRepo.MarkHeaderChecked(headerID, id)
-				Expect(err).ToNot(HaveOccurred())
-				err = contractHeaderRepo.MarkHeaderChecked(headerID2, id)
-				Expect(err).ToNot(HaveOccurred())
-				err = contractHeaderRepo.MarkHeaderChecked(headerID, methodIDs[i])
-				Expect(err).ToNot(HaveOccurred())
-			}
-
-			intersectionHeaders, err := contractHeaderRepo.MissingMethodsCheckedEventsIntersection(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, methodIDs, eventIDs)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(intersectionHeaders)).To(Equal(1))
-			Expect(intersectionHeaders[0].Id).To(Equal(headerID2))
 		})
 	})
 })

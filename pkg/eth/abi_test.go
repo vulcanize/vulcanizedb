@@ -107,7 +107,7 @@ var _ = Describe("ABI files", func() {
 
 				It("should make a GET request with supplied contract hash", func() {
 
-					abi, err := client.GetAbi("0xd26114cd6EE289AccF82350c8d8487fedB8A0C07")
+					abi, err := client.GetAbi("0xd26114cd6EE289AccF82350c8d8487fedB8A0C07", "")
 					Expect(server.ReceivedRequests()).Should(HaveLen(1))
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(abi).Should(Equal(abiString))

@@ -44,26 +44,13 @@ type ContractConfig struct {
 	// Otherwise all events in the contract ABI are watched
 	Events map[string][]string
 
-	// Map of contract address to slice of methods
-	// If any methods are listed in the slice only those will be polled
-	// Otherwise no methods will be polled
-	Methods map[string][]string
-
 	// Map of contract address to slice of event arguments to filter for
 	// If arguments are provided then only events which emit those arguments are watched
 	// Otherwise arguments are not filtered on events
 	EventArgs map[string][]string
 
-	// Map of contract address to slice of method arguments to limit polling to
-	// If arguments are provided then only those arguments are allowed as arguments in method polling
-	// Otherwise any argument of the right type seen emitted from events at that contract will be used in method polling
-	MethodArgs map[string][]string
-
 	// Map of contract address to their starting block
 	StartingBlocks map[string]int64
-
-	// Map of contract address to whether or not to pipe method polling results forward into subsequent method calls
-	Piping map[string]bool
 }
 
 func (contractConfig *ContractConfig) PrepConfig() {
@@ -71,12 +58,9 @@ func (contractConfig *ContractConfig) PrepConfig() {
 	contractConfig.Network = viper.GetString("contract.network")
 	contractConfig.Addresses = make(map[string]bool, len(addrs))
 	contractConfig.Abis = make(map[string]string, len(addrs))
-	contractConfig.Methods = make(map[string][]string, len(addrs))
 	contractConfig.Events = make(map[string][]string, len(addrs))
-	contractConfig.MethodArgs = make(map[string][]string, len(addrs))
 	contractConfig.EventArgs = make(map[string][]string, len(addrs))
 	contractConfig.StartingBlocks = make(map[string]int64, len(addrs))
-	contractConfig.Piping = make(map[string]bool, len(addrs))
 	// De-dupe addresses
 	for _, addr := range addrs {
 		contractConfig.Addresses[strings.ToLower(addr)] = true
@@ -125,27 +109,6 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		}
 		contractConfig.Events[strings.ToLower(addr)] = events
 
-		// Get and check methods
-		methods := make([]string, 0)
-		methodsInterface, methodsOK := transformer["methods"]
-		if !methodsOK {
-			log.Warnf("contract %s not configured with a list of methods to poll, will not poll any methods\r\n", addr)
-			methods = []string{}
-		} else {
-			methodsI, methodsOK := methodsInterface.([]interface{})
-			if !methodsOK {
-				log.Fatal(addr, "transformer `methods` not of type []string\r\n")
-			}
-			for _, strI := range methodsI {
-				str, strOK := strI.(string)
-				if !strOK {
-					log.Fatal(addr, "transformer `methods` not of type []string\r\n")
-				}
-				methods = append(methods, str)
-			}
-		}
-		contractConfig.Methods[strings.ToLower(addr)] = methods
-
 		// Get and check eventArgs
 		eventArgs := make([]string, 0)
 		eventArgsInterface, eventArgsOK := transformer["eventArgs"]
@@ -167,27 +130,6 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		}
 		contractConfig.EventArgs[strings.ToLower(addr)] = eventArgs
 
-		// Get and check methodArgs
-		methodArgs := make([]string, 0)
-		methodArgsInterface, methodArgsOK := transformer["methodArgs"]
-		if !methodArgsOK {
-			log.Warnf("contract %s not configured with a list of method argument values to poll with, will poll methods with all available arguments\r\n", addr)
-			methodArgs = []string{}
-		} else {
-			methodArgsI, methodArgsOK := methodArgsInterface.([]interface{})
-			if !methodArgsOK {
-				log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
-			}
-			for _, strI := range methodArgsI {
-				str, strOK := strI.(string)
-				if !strOK {
-					log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
-				}
-				methodArgs = append(methodArgs, str)
-			}
-		}
-		contractConfig.MethodArgs[strings.ToLower(addr)] = methodArgs
-
 		// Get and check startingBlock
 		startInterface, startOK := transformer["startingblock"]
 		if !startOK {
@@ -198,20 +140,5 @@ func (contractConfig *ContractConfig) PrepConfig() {
 			log.Fatal(addr, "transformer `startingBlock` not of type int\r\n")
 		}
 		contractConfig.StartingBlocks[strings.ToLower(addr)] = start
-
-		// Get pipping
-		var piping bool
-		_, pipeOK := transformer["piping"]
-		if !pipeOK {
-			log.Warnf("contract %s does not have its `piping` set, by default piping is turned off\r\n", addr)
-			piping = false
-		} else {
-			pipingInterface := transformer["piping"]
-			piping, pipeOK = pipingInterface.(bool)
-			if !pipeOK {
-				log.Fatal(addr, "transformer `piping` not of type bool\r\n")
-			}
-		}
-		contractConfig.Piping[strings.ToLower(addr)] = piping
 	}
 }

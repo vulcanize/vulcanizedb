@@ -17,24 +17,33 @@
 package fakes
 
 import (
-	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/contract"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 )
 
-type MockPoller struct {
-	ContractName string
+type MockParser struct {
+	AbiToReturn string
+	EventName   string
+	Event       types.Event
 }
 
-func (*MockPoller) PollContract(con contract.Contract, lastBlock int64) error {
-	panic("implement me")
-}
-
-func (*MockPoller) PollContractAt(con contract.Contract, blockNumber int64) error {
-	panic("implement me")
-}
-
-func (poller *MockPoller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
-	if p, ok := result.(*string); ok {
-		*p = poller.ContractName
-	}
+func (*MockParser) Parse(contractAddr, apiKey string) error {
 	return nil
+}
+
+func (parser *MockParser) ParseAbiStr(abiStr string) error {
+	parser.AbiToReturn = abiStr
+	return nil
+}
+
+func (parser *MockParser) Abi() string {
+	return parser.AbiToReturn
+}
+
+func (*MockParser) ParsedAbi() abi.ABI {
+	return abi.ABI{}
+}
+
+func (parser *MockParser) GetEvents(wanted []string) map[string]types.Event {
+	return map[string]types.Event{parser.EventName: parser.Event}
 }

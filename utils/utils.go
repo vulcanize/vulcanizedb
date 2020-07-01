@@ -18,15 +18,10 @@ package utils
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
-	"math/big"
-	"os"
-	"path/filepath"
-
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/eth"
+	"github.com/sirupsen/logrus"
 )
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
@@ -35,50 +30,6 @@ func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 		logrus.Fatal("Error loading postgres: ", err)
 	}
 	return *db
-}
-
-func ReadAbiFile(abiFilepath string) string {
-	abiFilepath = AbsFilePath(abiFilepath)
-	abi, err := eth.ReadAbiFile(abiFilepath)
-	if err != nil {
-		logrus.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
-	}
-	return abi
-}
-
-func AbsFilePath(filePath string) string {
-	if !filepath.IsAbs(filePath) {
-		cwd, _ := os.Getwd()
-		filePath = filepath.Join(cwd, filePath)
-	}
-	return filePath
-}
-
-func GetAbi(abiFilepath string, contractHash string, network string) string {
-	var contractAbiString string
-	if abiFilepath != "" {
-		contractAbiString = ReadAbiFile(abiFilepath)
-	} else {
-		url := eth.GenURL(network)
-		etherscan := eth.NewEtherScanClient(url)
-		logrus.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
-		contractAbiString, _ = etherscan.GetAbi(contractHash)
-	}
-	_, err := eth.ParseAbi(contractAbiString)
-	if err != nil {
-		logrus.Fatalln("Invalid ABI: ", err)
-	}
-	return contractAbiString
-}
-
-func RequestedBlockNumber(blockNumber *int64) *big.Int {
-	var _blockNumber *big.Int
-	if *blockNumber == -1 {
-		_blockNumber = nil
-	} else {
-		_blockNumber = big.NewInt(*blockNumber)
-	}
-	return _blockNumber
 }
 
 func RollbackAndLogFailure(tx *sqlx.Tx, txErr error, fieldName string) {

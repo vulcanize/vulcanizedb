@@ -18,7 +18,6 @@ package parser
 
 import (
 	"errors"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/constants"
@@ -29,12 +28,10 @@ import (
 // Parser is used to fetch and parse contract ABIs
 // It is dependent on etherscan's api
 type Parser interface {
-	Parse(contractAddr string) error
+	Parse(contractAddr, apiKey string) error
 	ParseAbiStr(abiStr string) error
 	Abi() string
 	ParsedAbi() abi.ABI
-	GetMethods(wanted []string) []types.Method
-	GetSelectMethods(wanted []string) []types.Method
 	GetEvents(wanted []string) map[string]types.Event
 }
 
@@ -65,7 +62,7 @@ func (p *parser) ParsedAbi() abi.ABI {
 
 // Parse retrieves and parses the abi string
 // for the given contract address
-func (p *parser) Parse(contractAddr string) error {
+func (p *parser) Parse(contractAddr, apiKey string) error {
 	// If the abi is one our locally stored abis, fetch
 	// TODO: Allow users to pass abis through config
 	knownAbi, err := p.lookUp(contractAddr)
@@ -75,7 +72,7 @@ func (p *parser) Parse(contractAddr string) error {
 		return err
 	}
 	// Try getting abi from etherscan
-	abiStr, err := p.client.GetAbi(contractAddr)
+	abiStr, err := p.client.GetAbi(contractAddr, apiKey)
 	if err != nil {
 		return err
 	}
@@ -103,44 +100,6 @@ func (p *parser) lookUp(contractAddr string) (string, error) {
 	return "", errors.New("ABI not present in lookup table")
 }
 
-// GetSelectMethods returns only specified methods, if they meet the criteria
-// Returns as array with methods in same order they were specified
-// Nil or empty wanted array => no events are returned
-func (p *parser) GetSelectMethods(wanted []string) []types.Method {
-	wLen := len(wanted)
-	if wLen == 0 {
-		return nil
-	}
-	methods := make([]types.Method, wLen)
-	for _, m := range p.parsedAbi.Methods {
-		for i, name := range wanted {
-			if name == m.Name && okTypes(m, wanted) {
-				methods[i] = types.NewMethod(m)
-			}
-		}
-	}
-
-	return methods
-}
-
-// GetMethods returns wanted methods
-// Empty wanted array => all methods are returned
-// Nil wanted array => no methods are returned
-func (p *parser) GetMethods(wanted []string) []types.Method {
-	if wanted == nil {
-		return nil
-	}
-	methods := make([]types.Method, 0)
-	length := len(wanted)
-	for _, m := range p.parsedAbi.Methods {
-		if length == 0 || stringInSlice(wanted, m.Name) {
-			methods = append(methods, types.NewMethod(m))
-		}
-	}
-
-	return methods
-}
-
 // GetEvents returns wanted events as map of types.Events
 // Empty wanted array => all events are returned
 // Nil wanted array => no events are returned
@@ -158,55 +117,6 @@ func (p *parser) GetEvents(wanted []string) map[string]types.Event {
 	}
 
 	return events
-}
-
-func okReturnType(arg abi.Argument) bool {
-	wantedTypes := []byte{
-		abi.UintTy,
-		abi.IntTy,
-		abi.BoolTy,
-		abi.StringTy,
-		abi.AddressTy,
-		abi.HashTy,
-		abi.BytesTy,
-		abi.FixedBytesTy,
-		abi.FixedPointTy,
-	}
-
-	for _, ty := range wantedTypes {
-		if arg.Type.T == ty {
-			return true
-		}
-	}
-
-	return false
-}
-
-func okTypes(m abi.Method, wanted []string) bool {
-	// Only return method if it has less than 3 arguments, a single output value, and it is a method we want or we want all methods (empty 'wanted' slice)
-	if len(m.Inputs) < 3 && len(m.Outputs) == 1 && (len(wanted) == 0 || stringInSlice(wanted, m.Name)) {
-		// Only return methods if inputs are all of accepted types and output is of the accepted types
-		if !okReturnType(m.Outputs[0]) {
-			return false
-		}
-		for _, input := range m.Inputs {
-			switch input.Type.T {
-			// Addresses are properly labeled and caught
-			// But hashes tend to not be explicitly labeled and caught
-			// Instead bytes32 are assumed to be hashes
-			case abi.AddressTy, abi.HashTy:
-			case abi.FixedBytesTy:
-				if input.Type.Size != 32 {
-					return false
-				}
-			default:
-				return false
-			}
-		}
-		return true
-	}
-
-	return false
 }
 
 func stringInSlice(list []string, s string) bool {

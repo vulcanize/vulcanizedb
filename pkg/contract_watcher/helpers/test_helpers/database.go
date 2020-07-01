@@ -34,60 +34,34 @@ import (
 )
 
 type TransferLog struct {
-	Id        int64  `db:"id"`
-	HeaderID  int64  `db:"header_id"`
-	TokenName string `db:"token_name"`
-	LogIndex  int64  `db:"log_idx"`
-	TxIndex   int64  `db:"tx_idx"`
-	From      string `db:"from_"`
-	To        string `db:"to_"`
-	Value     string `db:"value_"`
-	RawLog    []byte `db:"raw_log"`
+	ID       int64  `db:"id"`
+	HeaderID int64  `db:"header_id"`
+	LogIndex int64  `db:"log_idx"`
+	TxIndex  int64  `db:"tx_idx"`
+	From     string `db:"from_"`
+	To       string `db:"to_"`
+	Value    string `db:"value_"`
+	RawLog   []byte `db:"raw_log"`
 }
 
 type NewOwnerLog struct {
-	Id        int64  `db:"id"`
-	HeaderID  int64  `db:"header_id"`
-	TokenName string `db:"token_name"`
-	LogIndex  int64  `db:"log_idx"`
-	TxIndex   int64  `db:"tx_idx"`
-	Node      string `db:"node_"`
-	Label     string `db:"label_"`
-	Owner     string `db:"owner_"`
-	RawLog    []byte `db:"raw_log"`
-}
-
-type BalanceOf struct {
-	Id        int64  `db:"id"`
-	TokenName string `db:"token_name"`
-	Block     int64  `db:"block"`
-	Address   string `db:"who_"`
-	Balance   string `db:"returned"`
-}
-
-type Resolver struct {
-	Id        int64  `db:"id"`
-	TokenName string `db:"token_name"`
-	Block     int64  `db:"block"`
-	Node      string `db:"node_"`
-	Address   string `db:"returned"`
-}
-
-type Owner struct {
-	Id        int64  `db:"id"`
-	TokenName string `db:"token_name"`
-	Block     int64  `db:"block"`
-	Node      string `db:"node_"`
-	Address   string `db:"returned"`
+	ID       int64  `db:"id"`
+	HeaderID int64  `db:"header_id"`
+	LogIndex int64  `db:"log_idx"`
+	TxIndex  int64  `db:"tx_idx"`
+	Node     string `db:"node_"`
+	Label    string `db:"label_"`
+	Owner    string `db:"owner_"`
+	RawLog   []byte `db:"raw_log"`
 }
 
 func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	con := test_config.TestClient
 	testIPC := con.IPCPath
-	rawRpcClient, err := rpc.Dial(testIPC)
+	rawRPCClient, err := rpc.Dial(testIPC)
 	Expect(err).NotTo(HaveOccurred())
-	rpcClient := client.NewRpcClient(rawRpcClient, testIPC)
-	ethClient := ethclient.NewClient(rawRpcClient)
+	rpcClient := client.NewRpcClient(rawRPCClient, testIPC)
+	ethClient := ethclient.NewClient(rawRPCClient)
 	blockChainClient := client.NewEthClient(ethClient)
 	madeNode := node.MakeNode(rpcClient)
 	transactionConverter := converters.NewTransactionConverter(ethClient)
@@ -103,7 +77,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	return db, blockChain
 }
 
-func SetupTusdRepo(wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
+func SetupTusdRepo(wantedEvents []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
 		Name:     "vulcanize_testing",
@@ -111,98 +85,68 @@ func SetupTusdRepo(wantedEvents, wantedMethods []string) (*postgres.DB, *contrac
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
 
-	info := SetupTusdContract(wantedEvents, wantedMethods)
+	info := SetupTusdContract(wantedEvents)
 
 	return db, info
 }
 
-func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract {
+func SetupTusdContract(wantedEvents []string) *contract.Contract {
 	p := mocks.NewParser(constants.TusdAbiString)
 	err := p.Parse()
 	Expect(err).ToNot(HaveOccurred())
 
 	return contract.Contract{
-		Name:          "TrueUSD",
 		Address:       constants.TusdContractAddress,
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		StartingBlock: 6194634,
 		Events:        p.GetEvents(wantedEvents),
-		Methods:       p.GetSelectMethods(wantedMethods),
-		MethodArgs:    map[string]bool{},
 		FilterArgs:    map[string]bool{},
 	}.Init()
 }
 
-func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
-	p := mocks.NewParser(constants.ENSAbiString)
-	err := p.Parse()
-	Expect(err).ToNot(HaveOccurred())
-
-	return contract.Contract{
-		Name:          "ENS-Registry",
-		Address:       constants.EnsContractAddress,
-		Abi:           p.Abi(),
-		ParsedAbi:     p.ParsedAbi(),
-		StartingBlock: 6194634,
-		Events:        p.GetEvents(wantedEvents),
-		Methods:       p.GetSelectMethods(wantedMethods),
-		MethodArgs:    map[string]bool{},
-		FilterArgs:    map[string]bool{},
-	}.Init()
-}
-
-func SetupMarketPlaceContract(wantedEvents, wantedMethods []string) *contract.Contract {
+func SetupMarketPlaceContract(wantedEvents []string) *contract.Contract {
 	p := mocks.NewParser(constants.MarketPlaceAbiString)
 	err := p.Parse()
 	Expect(err).NotTo(HaveOccurred())
 
 	return contract.Contract{
-		Name:          "Marketplace",
 		Address:       constants.MarketPlaceContractAddress,
 		StartingBlock: 6496012,
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		Events:        p.GetEvents(wantedEvents),
-		Methods:       p.GetSelectMethods(wantedMethods),
 		FilterArgs:    map[string]bool{},
-		MethodArgs:    map[string]bool{},
 	}.Init()
 }
 
-func SetupMolochContract(wantedEvents, wantedMethods []string) *contract.Contract {
+func SetupMolochContract(wantedEvents []string) *contract.Contract {
 	p := mocks.NewParser(constants.MolochAbiString)
 	err := p.Parse()
 	Expect(err).NotTo(HaveOccurred())
 
 	return contract.Contract{
-		Name:          "Moloch",
 		Address:       constants.MolochContractAddress,
 		StartingBlock: 7218566,
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		Events:        p.GetEvents(wantedEvents),
-		Methods:       p.GetSelectMethods(wantedMethods),
 		FilterArgs:    map[string]bool{},
-		MethodArgs:    map[string]bool{},
 	}.Init()
 }
 
-func SetupOasisContract(wantedEvents, wantedMethods []string) *contract.Contract {
+func SetupOasisContract(wantedEvents []string) *contract.Contract {
 	p := mocks.NewParser(constants.OasisAbiString)
 	err := p.Parse()
 	Expect(err).NotTo(HaveOccurred())
 
 	return contract.Contract{
-		Name:          "Oasis",
 		Address:       constants.OasisContractAddress,
 		StartingBlock: 7183773,
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		Events:        p.GetEvents(wantedEvents),
-		Methods:       p.GetSelectMethods(wantedMethods),
 		FilterArgs:    map[string]bool{},
-		MethodArgs:    map[string]bool{},
 	}.Init()
 }
 
