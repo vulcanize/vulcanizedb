@@ -30,5 +30,8 @@ For example, you could write a function to expose a block header's state root ov
 - [Custom queries](https://www.graphile.org/postgraphile/custom-queries/) enable you to provide on-demand access to more complex data (e.g. the product of joining and filtering several tables' data based on a passed argument).
 For example, you could write a custom query to get the block timestamp for every transaction originating from a given address.
 - [Subscriptions](https://www.graphile.org/postgraphile/subscriptions/) enable you to publish data as it is coming into your database.
+- When exposing collections through custom queries, note that Postgraphile's built-in pagination arguments may not work as expected. 
+Custom queries only allow for offset pagination. Though cursor pagination arguments may seem to be available, they are internally mapped
+ to offset pagination. For more information, please see the [postgraphile documentation](https://www.graphile.org/postgraphile/custom-queries/#advice) about custom queries.
 
 The above list is not exhaustive - please see the Postgraphile documentation for a more comprehensive and up-to-date description of available features.
