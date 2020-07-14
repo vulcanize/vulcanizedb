@@ -128,7 +128,7 @@ var _ = Describe("StorageValueLoader", func() {
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
-		headerRepo.GetHeaderByBlockNumberError = fakes.FakeError
+		headerRepo.GetHeadersInRangeError = fakes.FakeError
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))
