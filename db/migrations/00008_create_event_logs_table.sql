@@ -23,7 +23,7 @@ CREATE INDEX event_logs_transaction
     ON event_logs (tx_hash);
 CREATE INDEX event_logs_untransformed
     ON event_logs (transformed)
-    WHERE transformed is false;
+    WHERE transformed = false;
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.

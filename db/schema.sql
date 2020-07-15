@@ -709,7 +709,7 @@ CREATE INDEX event_logs_transaction ON public.event_logs USING btree (tx_hash);
 -- Name: event_logs_untransformed; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX event_logs_untransformed ON public.event_logs USING btree (transformed) WHERE (transformed IS FALSE);
+CREATE INDEX event_logs_untransformed ON public.event_logs USING btree (transformed) WHERE (transformed = false);
 
 
 --
