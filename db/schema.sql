@@ -709,7 +709,7 @@ CREATE INDEX event_logs_transaction ON public.event_logs USING btree (tx_hash);
 -- Name: event_logs_untransformed; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX event_logs_untransformed ON public.event_logs USING btree (transformed) WHERE (transformed IS FALSE);
+CREATE INDEX event_logs_untransformed ON public.event_logs USING btree (transformed) WHERE (transformed = false);
 
 
 --
@@ -758,7 +758,7 @@ CREATE INDEX receipts_transaction ON public.receipts USING btree (transaction_id
 -- Name: storage_diff_checked_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX storage_diff_checked_index ON public.storage_diff USING btree (checked) WHERE (checked IS FALSE);
+CREATE INDEX storage_diff_checked_index ON public.storage_diff USING btree (checked) WHERE (checked = false);
 
 
 --

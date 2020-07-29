@@ -65,7 +65,7 @@ func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawD
 
 func (repository diffRepository) GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error) {
 	var result []types.PersistedDiff
-	query := fmt.Sprintf("SELECT * FROM public.storage_diff WHERE checked IS false and id > %d ORDER BY id ASC LIMIT %d", minID, limit)
+	query := fmt.Sprintf("SELECT * FROM public.storage_diff WHERE checked = false and id > %d ORDER BY id ASC LIMIT %d", minID, limit)
 	err := repository.db.Select(&result, query)
 	if err != nil {
 		return nil, fmt.Errorf("error getting unchecked storage diffs with id greater than %d: %w", minID, err)
