@@ -1,5 +1,4 @@
 -- +goose Up
--- SQL in this section is executed when the migration is applied.
 CREATE TABLE public.event_logs
 (
     id           SERIAL PRIMARY KEY,
@@ -26,8 +25,4 @@ CREATE INDEX event_logs_untransformed
     WHERE transformed = false;
 
 -- +goose Down
--- SQL in this section is executed when the migration is rolled back.
-DROP INDEX event_logs_transaction;
-DROP INDEX event_logs_address;
-DROP INDEX event_logs_untransformed;
 DROP TABLE event_logs;

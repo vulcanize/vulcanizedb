@@ -20,6 +20,4 @@ CREATE INDEX receipts_transaction
     ON public.receipts (transaction_id);
 
 -- +goose Down
-DROP INDEX receipts_transaction;
-DROP INDEX receipts_contract_address;
 DROP TABLE receipts;

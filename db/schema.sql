@@ -113,6 +113,13 @@ $$;
 
 
 --
+-- Name: FUNCTION get_or_create_header(block_number bigint, hash character varying, raw jsonb, block_timestamp numeric, eth_node_id integer); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.get_or_create_header(block_number bigint, hash character varying, raw jsonb, block_timestamp numeric, eth_node_id integer) IS '@omit';
+
+
+--
 -- Name: set_header_updated(); Type: FUNCTION; Schema: public; Owner: -
 --
 

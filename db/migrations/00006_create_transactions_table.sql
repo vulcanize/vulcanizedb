@@ -19,5 +19,4 @@ CREATE INDEX transactions_header
     ON transactions (header_id);
 
 -- +goose Down
-DROP INDEX transactions_header;
 DROP TABLE transactions;

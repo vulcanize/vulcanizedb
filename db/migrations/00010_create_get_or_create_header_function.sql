@@ -1,6 +1,4 @@
 -- +goose Up
--- SQL in this section is executed when the migration is applied.
-
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.get_or_create_header(block_number BIGINT, hash VARCHAR(66), raw JSONB,
                                                        block_timestamp NUMERIC, eth_node_id INTEGER) RETURNS INTEGER AS
@@ -47,7 +45,8 @@ $$
     LANGUAGE plpgsql;
 -- +goose StatementEnd
 
+COMMENT ON FUNCTION public.get_or_create_header(block_number BIGINT, hash VARCHAR, raw JSONB, block_timestamp NUMERIC, eth_node_id INTEGER)
+    IS E'@omit';
 
 -- +goose Down
--- SQL in this section is executed when the migration is rolled back.
 DROP FUNCTION public.get_or_create_header(block_number BIGINT, hash VARCHAR, raw JSONB, block_timestamp NUMERIC, eth_node_id INTEGER);
