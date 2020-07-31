@@ -1,5 +1,4 @@
 -- +goose Up
--- SQL in this section is executed when the migration is applied.
 CREATE TABLE public.watched_logs
 (
     id               SERIAL PRIMARY KEY,
@@ -8,5 +7,4 @@ CREATE TABLE public.watched_logs
 );
 
 -- +goose Down
--- SQL in this section is executed when the migration is rolled back.
 DROP TABLE public.watched_logs;

@@ -12,5 +12,8 @@ CREATE TABLE public.storage_diff
     UNIQUE (block_height, block_hash, hashed_address, storage_key, storage_value)
 );
 
+CREATE INDEX storage_diff_checked_index
+    ON public.storage_diff (checked) WHERE checked = false;
+
 -- +goose Down
 DROP TABLE public.storage_diff;
