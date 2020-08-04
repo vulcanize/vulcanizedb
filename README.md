@@ -5,6 +5,13 @@
 
 > Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
 
+## Notice
+
+This repository has been broken up into separate repositories for its different components
+
+The headerSync functionality can be found [here](https://github.com/vulcanize/eth-header-sync)  
+The contractWatcher functionality can be found [here](https://github.com/vulcanize/eth-contract-watcher)  
+The superNode functionality can be found [here](https://github.com/vulcanize/ipfs-blockchain-watcher)  
 
 ## Table of Contents
 1. [Background](#background)
