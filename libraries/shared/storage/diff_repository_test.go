@@ -41,11 +41,11 @@ var _ = Describe("Storage diffs repository", func() {
 		test_config.CleanTestDB(db)
 		repo = storage.NewDiffRepository(db)
 		fakeStorageDiff = types.RawDiff{
-			HashedAddress: test_data.FakeHash(),
-			BlockHash:     test_data.FakeHash(),
-			BlockHeight:   rand.Int(),
-			StorageKey:    test_data.FakeHash(),
-			StorageValue:  test_data.FakeHash(),
+			Address:      test_data.FakeAddress(),
+			BlockHash:    test_data.FakeHash(),
+			BlockHeight:  rand.Int(),
+			StorageKey:   test_data.FakeHash(),
+			StorageValue: test_data.FakeHash(),
 		}
 	})
 
@@ -59,7 +59,6 @@ var _ = Describe("Storage diffs repository", func() {
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
-			Expect(persisted.HashedAddress).To(Equal(fakeStorageDiff.HashedAddress))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -90,7 +89,6 @@ var _ = Describe("Storage diffs repository", func() {
 			var persisted types.PersistedDiff
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
-			Expect(persisted.HashedAddress).To(Equal(fakeStorageDiff.HashedAddress))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -194,7 +192,17 @@ var _ = Describe("Storage diffs repository", func() {
 	})
 
 	Describe("GetNewDiffs", func() {
+<<<<<<< HEAD
 		It("sends diffs that are marked as 'new'", func() {
+=======
+		It("sends diffs that are not marked as checked", func() {
+			fakeRawDiff := types.RawDiff{
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  rand.Int(),
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+>>>>>>> 1999ea8c... Remove hashed address
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -209,12 +217,21 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffs).To(ConsistOf(fakePersistedDiff))
 		})
 
+<<<<<<< HEAD
 		It("sends diffs that are marked as 'unrecognized'", func() {
 			unrecognizedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
 				Status:    storage.Unrecognized,
 				EthNodeID: db.NodeID,
+=======
+		It("does not send diff that's marked as checked", func() {
+			fakeRawDiff := types.RawDiff{
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  rand.Int(),
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+>>>>>>> 1999ea8c... Remove hashed address
 			}
 			insertTestDiff(unrecognizedPersistedDiff, db)
 
@@ -258,11 +275,10 @@ var _ = Describe("Storage diffs repository", func() {
 			blockZero := rand.Int()
 			for i := 0; i < 2; i++ {
 				fakeRawDiff := types.RawDiff{
-					HashedAddress: test_data.FakeHash(),
-					BlockHash:     test_data.FakeHash(),
-					BlockHeight:   blockZero + i,
-					StorageKey:    test_data.FakeHash(),
-					StorageValue:  test_data.FakeHash(),
+					BlockHash:    test_data.FakeHash(),
+					BlockHeight:  blockZero + i,
+					StorageKey:   test_data.FakeHash(),
+					StorageValue: test_data.FakeHash(),
 				}
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,
@@ -286,11 +302,24 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 
+<<<<<<< HEAD
 	Describe("Changing the diff status", func() {
 		var fakePersistedDiff types.PersistedDiff
 		BeforeEach(func() {
 			fakePersistedDiff = types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
+=======
+	Describe("MarkChecked", func() {
+		It("marks a diff as checked", func() {
+			fakeRawDiff := types.RawDiff{
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  rand.Int(),
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeRawDiff,
+>>>>>>> 1999ea8c... Remove hashed address
 				ID:        rand.Int63(),
 				Status:    storage.New,
 				EthNodeID: db.NodeID,
@@ -343,11 +372,10 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends first diff for a given block height", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
-				HashedAddress: test_data.FakeHash(),
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   blockHeight,
-				StorageKey:    test_data.FakeHash(),
-				StorageValue:  test_data.FakeHash(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
 			}
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
@@ -363,11 +391,10 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends a diff for the next block height if one doesn't exist for the block passed in", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
-				HashedAddress: test_data.FakeHash(),
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   blockHeight,
-				StorageKey:    test_data.FakeHash(),
-				StorageValue:  test_data.FakeHash(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
 			}
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
@@ -382,6 +409,15 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 
 		It("won't fail if all of the diffs within the id range are already checked", func() {
+<<<<<<< HEAD
+=======
+			fakeRawDiff := types.RawDiff{
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  rand.Int(),
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
+			}
+>>>>>>> 1999ea8c... Remove hashed address
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),

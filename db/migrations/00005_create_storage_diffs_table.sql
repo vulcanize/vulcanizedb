@@ -12,7 +12,6 @@ CREATE TABLE public.storage_diff
     id             BIGSERIAL PRIMARY KEY,
     block_height   BIGINT,
     block_hash     BYTEA,
-    hashed_address BYTEA,
     storage_key    BYTEA,
     storage_value  BYTEA,
     eth_node_id    INTEGER     NOT NULL REFERENCES public.eth_nodes (id) ON DELETE CASCADE,

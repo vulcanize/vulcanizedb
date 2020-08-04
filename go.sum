@@ -223,6 +223,8 @@ github.com/makerdao/go-ethereum v1.9.11-rc2 h1:ZjxmFdkar8P43EkK17ni8y3vXxHHFZjOd
 github.com/makerdao/go-ethereum v1.9.11-rc2/go.mod h1:7oC0Ni6dosMv5pxMigm6s0hN8g4haJMBnqmmo0D9YfQ=
 github.com/makerdao/go-ethereum v1.9.15-statechange-filter h1:jLX9CleT+i/gUn5LLTUoor1NXYLHSTnZM1pOFKrg2IA=
 github.com/makerdao/go-ethereum v1.9.15-statechange-filter/go.mod h1:slT8bPPRhXsyNTwHQxrOnjuTZ1sDXRajW11EkJ84QJ0=
+github.com/makerdao/vdb-mcd-transformers v0.2.17/go.mod h1:lon896AMm/ZzNGu4n1Cfa1XW2V3C1jtHs13VRvTHKrg=
+github.com/makerdao/vulcanizedb v0.0.11-rc.1/go.mod h1:FZZ/SKy+7Ejdc+4Wa5oTGrr2cFuaCgGBxc2xoifaEoY=
 github.com/mattn/go-colorable v0.1.0/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.2 h1:/bC9yWikZXAL9uJdulbSfyVNIR3n3trXl+v8+1sx8mU=
 github.com/mattn/go-colorable v0.1.2/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=

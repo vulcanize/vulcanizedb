@@ -26,7 +26,6 @@ import (
 type MockStorageTransformer struct {
 	Address           common.Address
 	StorageKeysLookup storage.KeysLookup
-	KeccakOfAddress   common.Hash
 	ExecuteErr        error
 	PassedDiff        types.PersistedDiff
 }
@@ -34,10 +33,6 @@ type MockStorageTransformer struct {
 func (transformer *MockStorageTransformer) Execute(diff types.PersistedDiff) error {
 	transformer.PassedDiff = diff
 	return transformer.ExecuteErr
-}
-
-func (transformer *MockStorageTransformer) KeccakContractAddress() common.Hash {
-	return transformer.KeccakOfAddress
 }
 
 func (transformer *MockStorageTransformer) GetContractAddress() common.Address {

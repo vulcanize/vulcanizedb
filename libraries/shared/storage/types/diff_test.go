@@ -44,8 +44,7 @@ var _ = Describe("Storage row parsing", func() {
 			result, err := types.FromParityCsvRow(data)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedKeccakOfContractAddress := types.HexToKeccak256Hash(contract)
-			Expect(result.HashedAddress).To(Equal(expectedKeccakOfContractAddress))
+			Expect(result.Address).To(Equal(common.HexToAddress(contract)))
 			Expect(result.BlockHash).To(Equal(common.HexToHash(blockHash)))
 			Expect(result.BlockHeight).To(Equal(789))
 			Expect(result.StorageKey).To(Equal(common.HexToHash(storageKey)))
@@ -88,8 +87,6 @@ var _ = Describe("Storage row parsing", func() {
 			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedHashedAddress := crypto.Keccak256Hash(accountDiff.Key)
-			Expect(result.HashedAddress).To(Equal(expectedHashedAddress))
 			Expect(result.BlockHash).To(Equal(fakes.FakeHash))
 			expectedBlockHeight := int(stateDiff.BlockNumber.Int64())
 			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))

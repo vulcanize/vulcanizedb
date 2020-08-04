@@ -28,11 +28,11 @@ import (
 const ExpectedRowLength = 5
 
 type RawDiff struct {
-	HashedAddress common.Hash `db:"hashed_address"`
-	BlockHash     common.Hash `db:"block_hash"`
-	BlockHeight   int         `db:"block_height"`
-	StorageKey    common.Hash `db:"storage_key"`
-	StorageValue  common.Hash `db:"storage_value"`
+	Address      common.Address `db:"address"`
+	BlockHash    common.Hash    `db:"block_hash"`
+	BlockHeight  int            `db:"block_height"`
+	StorageKey   common.Hash    `db:"storage_key"`
+	StorageValue common.Hash    `db:"storage_value"`
 }
 
 type PersistedDiff struct {
@@ -53,11 +53,11 @@ func FromParityCsvRow(csvRow []string) (RawDiff, error) {
 		return RawDiff{}, err
 	}
 	return RawDiff{
-		HashedAddress: HexToKeccak256Hash(csvRow[0]),
-		BlockHash:     common.HexToHash(csvRow[1]),
-		BlockHeight:   height,
-		StorageKey:    common.HexToHash(csvRow[3]),
-		StorageValue:  common.HexToHash(csvRow[4]),
+		Address:      common.HexToAddress(csvRow[0]),
+		BlockHash:    common.HexToHash(csvRow[1]),
+		BlockHeight:  height,
+		StorageKey:   common.HexToHash(csvRow[3]),
+		StorageValue: common.HexToHash(csvRow[4]),
 	}, nil
 }
 
@@ -69,11 +69,10 @@ func FromGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff
 	}
 
 	return RawDiff{
-		HashedAddress: crypto.Keccak256Hash(account.Key),
-		BlockHash:     stateDiff.BlockHash,
-		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
-		StorageKey:    common.BytesToHash(storage.Key),
-		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
+		BlockHash:    stateDiff.BlockHash,
+		BlockHeight:  int(stateDiff.BlockNumber.Int64()),
+		StorageKey:   crypto.Keccak256Hash(storage.Key),
+		StorageValue: common.BytesToHash(decodedRLPStorageValue),
 	}, nil
 }
 

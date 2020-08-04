@@ -45,14 +45,6 @@ var _ = Describe("Storage transformer", func() {
 		}
 	})
 
-	It("returns the keccaked contract address being watched", func() {
-		fakeAddress := fakes.FakeAddress
-		keccakOfAddress := types.HexToKeccak256Hash(fakeAddress.Hex())
-		t.Address = fakeAddress
-
-		Expect(t.KeccakContractAddress()).To(Equal(keccakOfAddress))
-	})
-
 	It("returns the contract address being watched", func() {
 		fakeAddress := fakes.FakeAddress
 		t.Address = fakeAddress
@@ -86,11 +78,11 @@ var _ = Describe("Storage transformer", func() {
 			ID:       rand.Int63(),
 			HeaderID: fakeHeaderID,
 			RawDiff: types.RawDiff{
-				HashedAddress: common.Hash{},
-				BlockHash:     common.HexToHash(fakeBlockHash),
-				BlockHeight:   fakeBlockNumber,
-				StorageKey:    common.Hash{},
-				StorageValue:  rawValue.Hash(),
+				Address:      fakes.FakeAddress,
+				BlockHash:    common.HexToHash(fakeBlockHash),
+				BlockHeight:  fakeBlockNumber,
+				StorageKey:   common.Hash{},
+				StorageValue: rawValue.Hash(),
 			},
 		}
 
@@ -140,11 +132,11 @@ var _ = Describe("Storage transformer", func() {
 				ID:       rand.Int63(),
 				HeaderID: fakeHeaderID,
 				RawDiff: types.RawDiff{
-					HashedAddress: common.Hash{},
-					BlockHash:     common.HexToHash(fakeBlockHash),
-					BlockHeight:   fakeBlockNumber,
-					StorageKey:    common.Hash{},
-					StorageValue:  rawValue.Hash(),
+					Address:      fakes.FakeAddress,
+					BlockHash:    common.HexToHash(fakeBlockHash),
+					BlockHeight:  fakeBlockNumber,
+					StorageKey:   common.Hash{},
+					StorageValue: rawValue.Hash(),
 				},
 			}
 
