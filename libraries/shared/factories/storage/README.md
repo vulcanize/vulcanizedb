@@ -71,7 +71,6 @@ func (lookup *keysLookup) refreshMappings() error {
 	if err != nil {
 		return err
 	}
-	lookup.mappings = utils.AddHashedKeys(lookup.mappings)
 	return nil
 }
 ```

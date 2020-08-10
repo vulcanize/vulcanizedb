@@ -148,7 +148,7 @@ var _ = Describe("Storage row parsing", func() {
 			Expect(result.BlockHash).To(Equal(fakes.FakeHash))
 			expectedBlockHeight := int(stateDiff.BlockNumber.Int64())
 			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))
-			expectedStorageKey := crypto.Keccak256Hash(storageDiff.Key)
+			expectedStorageKey := common.BytesToHash(storageDiff.Key)
 			Expect(result.StorageKey).To(Equal(expectedStorageKey))
 			expectedStorageValue := common.BytesToHash(storageValueBytes)
 			Expect(result.StorageValue).To(Equal(expectedStorageValue))

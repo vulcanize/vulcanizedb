@@ -249,21 +249,21 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 					HashedAddress: crypto.Keccak256Hash(test_data.ContractLeafKey[:]),
 					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:   intHeight,
-					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
 					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
 				}
 				expectedDiff2 := types.RawDiff{
 					HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
 					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:   intHeight,
-					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
 					StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
 				}
 				expectedDiff3 := types.RawDiff{
 					HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
 					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:   intHeight,
-					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
 					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
 				}
 

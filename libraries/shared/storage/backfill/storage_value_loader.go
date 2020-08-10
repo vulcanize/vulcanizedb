@@ -128,7 +128,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 						HashedAddress: keccakOfAddress,
 						BlockHash:     blockHash,
 						BlockHeight:   int(blockNumber),
-						StorageKey:    crypto.Keccak256Hash(key.Bytes()),
+						StorageKey:    key,
 						StorageValue:  newValueHash,
 					}
 					createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)

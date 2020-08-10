@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
@@ -59,7 +58,6 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 		if refreshErr != nil {
 			return metadata, fmt.Errorf("error refreshing mappings in keys lookup: %w", refreshErr)
 		}
-		lookup.mappings = storage.AddHashedKeys(lookup.mappings)
 		metadata, ok = lookup.mappings[key]
 		if !ok {
 			return metadata, fmt.Errorf("%w: %s", types.ErrKeyNotFound, key.Hex())

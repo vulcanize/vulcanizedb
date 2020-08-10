@@ -223,14 +223,14 @@ var _ = Describe("StorageValueLoader", func() {
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
-			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:    keyOne,
 			StorageValue:  valueOne,
 		}
 		expectedDiffTwo := types.RawDiff{
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressTwo[:]),
-			StorageKey:    crypto.Keccak256Hash(keyTwo.Bytes()),
+			StorageKey:    keyTwo,
 			StorageValue:  valueTwo,
 		}
 
@@ -256,21 +256,21 @@ var _ = Describe("StorageValueLoader", func() {
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
-			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:    keyOne,
 			StorageValue:  valueOne,
 		}
 		expectedDiffTwo := types.RawDiff{
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressTwo[:]),
-			StorageKey:    crypto.Keccak256Hash(keyTwo.Bytes()),
+			StorageKey:    keyTwo,
 			StorageValue:  valueTwo,
 		}
 		expectedDiffThree := types.RawDiff{
 			BlockHeight:   int(blockTwo),
 			BlockHash:     common.HexToHash(blockTwoHeader.Hash),
 			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
-			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:    keyOne,
 			StorageValue:  valueTwo,
 		}
 

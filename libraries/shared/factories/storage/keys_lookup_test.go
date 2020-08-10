@@ -18,7 +18,6 @@ package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -86,17 +85,6 @@ var _ = Describe("Storage keys lookup", func() {
 			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
 
 			metadata, err := lookup.Lookup(fakeKey)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(metadata).To(Equal(fakeMetadata))
-		})
-
-		It("returns metadata for hashed version of key (accommodates keys emitted from Geth)", func() {
-			fakeKey := test_data.FakeHash()
-			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
-
-			hashedKey := common.BytesToHash(crypto.Keccak256(fakeKey.Bytes()))
-			metadata, err := lookup.Lookup(hashedKey)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadata).To(Equal(fakeMetadata))
