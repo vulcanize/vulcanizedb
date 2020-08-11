@@ -41,6 +41,7 @@ type PersistedDiff struct {
 	FromBackfill bool `db:"from_backfill"`
 	ID           int64
 	HeaderID     int64 `db:"header_id"`
+	EthNodeID    int64 `db:"eth_node_id"`
 }
 
 func FromParityCsvRow(csvRow []string) (RawDiff, error) {
