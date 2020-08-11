@@ -20,10 +20,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 )
 
 var (
@@ -37,22 +36,18 @@ var (
 	StorageKey              = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
 	SmallStorageValue       = common.Hex2Bytes("03")
 	SmallStorageValueRlp, _ = rlp.EncodeToBytes(SmallStorageValue)
-	storageWithSmallValue   = []statediff.StorageDiff{{
+	storageWithSmallValue   = []filters.StorageDiff{{
 		Key:   StorageKey,
 		Value: SmallStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
 	}}
 	LargeStorageValue            = common.Hex2Bytes("00191b53778c567b14b50ba0000")
 	LargeStorageValueRlp, rlpErr = rlp.EncodeToBytes(LargeStorageValue)
-	storageWithLargeValue        = []statediff.StorageDiff{{
+	storageWithLargeValue        = []filters.StorageDiff{{
 		Key:   StorageKey,
 		Value: LargeStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
 	}}
-	EmptyStorage        = make([]statediff.StorageDiff, 0)
-	StorageWithBadValue = statediff.StorageDiff{
+	EmptyStorage        = make([]filters.StorageDiff, 0)
+	StorageWithBadValue = filters.StorageDiff{
 		Key:   StorageKey,
 		Value: []byte{0, 1, 2},
 		// this storage value will fail to be decoded as an RLP with the following error message:
@@ -69,56 +64,49 @@ var (
 		Root:     ContractRoot,
 		CodeHash: CodeHash,
 	}
-	valueBytes, _       = rlp.EncodeToBytes(testAccount)
-	CreatedAccountDiffs = []statediff.AccountDiff{
-		{
-			Key:     ContractLeafKey.Bytes(),
-			Value:   valueBytes,
-			Storage: storageWithSmallValue,
-		},
-	}
-
-	UpdatedAccountDiffs = []statediff.AccountDiff{{
-		Key:     AnotherContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storageWithLargeValue,
-	}}
-
-	DeletedAccountDiffs = []statediff.AccountDiff{{
-		Key:     AnotherContractLeafKey.Bytes(),
-		Value:   valueBytes,
+	AccountValueBytes, _ = rlp.EncodeToBytes(testAccount)
+	testAccountDiff1     = filters.AccountDiff{
+		Key:     ContractLeafKey.Bytes(),
+		Value:   AccountValueBytes,
 		Storage: storageWithSmallValue,
-	}}
+	}
+	testAccountDiff2 = filters.AccountDiff{
+		Key:     AnotherContractLeafKey.Bytes(),
+		Value:   AccountValueBytes,
+		Storage: storageWithLargeValue,
+	}
+	testAccountDiff3 = filters.AccountDiff{
+		Key:     AnotherContractLeafKey.Bytes(),
+		Value:   AccountValueBytes,
+		Storage: storageWithSmallValue,
+	}
+	UpdatedAccountDiffs = []filters.AccountDiff{testAccountDiff1, testAccountDiff2, testAccountDiff3}
 
-	MockStateDiff = statediff.StateDiff{
+	MockStateDiff = filters.StateDiff{
 		BlockNumber:     BlockNumber,
 		BlockHash:       common.HexToHash(BlockHash),
-		CreatedAccounts: CreatedAccountDiffs,
-		DeletedAccounts: DeletedAccountDiffs,
 		UpdatedAccounts: UpdatedAccountDiffs,
 	}
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 
-	mockTransaction1 = types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
-	mockTransaction2 = types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
-	MockTransactions = types.Transactions{mockTransaction1, mockTransaction2}
-
-	mockReceipt1 = types.NewReceipt(common.HexToHash("0x0").Bytes(), false, 50)
-	mockReceipt2 = types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
-	MockReceipts = types.Receipts{mockReceipt1, mockReceipt2}
-
-	MockHeader = types.Header{
-		Time:        0,
-		Number:      BlockNumber,
-		Root:        common.HexToHash("0x0"),
-		TxHash:      common.HexToHash("0x0"),
-		ReceiptHash: common.HexToHash("0x0"),
-	}
-	MockBlock       = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
-	MockBlockRlp, _ = rlp.EncodeToBytes(MockBlock)
-
-	MockStatediffPayload = statediff.Payload{
-		BlockRlp:     MockBlockRlp,
+	MockStatediffPayload = filters.Payload{
 		StateDiffRlp: MockStateDiffBytes,
+	}
+
+	storageWithBadValue = filters.StorageDiff{
+		Key:   StorageKey,
+		Value: []byte{0, 1, 2},
+		// this storage value will fail to be decoded as an RLP with the following error message:
+		// "rlp: input contains more than one value"
+	}
+	testAccountDiffWithBadStorageValue = filters.AccountDiff{
+		Key:     ContractLeafKey.Bytes(),
+		Value:   AccountValueBytes,
+		Storage: []filters.StorageDiff{storageWithBadValue},
+	}
+	StateDiffWithBadStorageValue = filters.StateDiff{
+		BlockNumber:     BlockNumber,
+		BlockHash:       common.HexToHash(BlockHash),
+		UpdatedAccounts: []filters.AccountDiff{testAccountDiffWithBadStorageValue},
 	}
 )

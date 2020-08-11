@@ -23,6 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/filters"
 )
 
 type EthClient interface {
@@ -30,6 +31,7 @@ type EthClient interface {
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 	FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error)
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
+	SubscribeNewStateChanges(ctx context.Context, q ethereum.FilterQuery, ch chan<- filters.Payload) (ethereum.Subscription, error)
 	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }

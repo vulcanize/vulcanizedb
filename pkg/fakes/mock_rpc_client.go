@@ -23,9 +23,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 	. "github.com/onsi/gomega"
@@ -45,7 +45,7 @@ type MockRpcClient struct {
 	passedResult         interface{}
 	passedBatch          []core.BatchElem
 	passedNamespace      string
-	passedPayloadChan    chan statediff.Payload
+	passedPayloadChan    chan filters.Payload
 	passedSubscribeArgs  []interface{}
 	lengthOfBatch        int
 	returnPOAHeader      core.POAHeader
@@ -61,7 +61,7 @@ func NewMockRpcClient() *MockRpcClient {
 func (c *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (core.Subscription, error) {
 	c.passedNamespace = namespace
 
-	passedPayloadChan, ok := payloadChan.(chan statediff.Payload)
+	passedPayloadChan, ok := payloadChan.(chan filters.Payload)
 	if !ok {
 		return nil, errors.New("passed in channel is not of the correct type")
 	}
@@ -75,7 +75,7 @@ func (c *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, arg
 	return client.Subscription{RpcSubscription: &subscription}, nil
 }
 
-func (c *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
+func (c *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan filters.Payload, args []interface{}) {
 	Expect(c.passedNamespace).To(Equal(namespace))
 	Expect(c.passedPayloadChan).To(Equal(payloadChan))
 	Expect(c.passedSubscribeArgs).To(Equal(args))

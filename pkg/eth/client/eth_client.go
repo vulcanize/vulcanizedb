@@ -18,11 +18,13 @@ package client
 
 import (
 	"context"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"math/big"
 )
 
 type EthClient struct {
@@ -47,6 +49,10 @@ func (client EthClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) 
 
 func (client EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	return client.client.HeaderByNumber(ctx, number)
+}
+
+func (client EthClient) SubscribeNewStateChanges(ctx context.Context, q ethereum.FilterQuery, ch chan<- filters.Payload) (ethereum.Subscription, error) {
+	return client.client.SubscribeNewStateChanges(ctx, q, ch)
 }
 
 func (client EthClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {

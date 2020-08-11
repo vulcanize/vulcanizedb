@@ -23,38 +23,43 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/filters"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/gomega"
 )
 
 type MockEthClient struct {
-	callContractErr             error
-	callContractPassedContext   context.Context
-	callContractPassedMsg       ethereum.CallMsg
-	callContractPassedNumber    *big.Int
-	callContractReturnBytes     []byte
-	blockByNumberErr            error
-	blockByNumberPassedContext  context.Context
-	blockByNumberPassedNumber   *big.Int
-	blockByNumberReturnBlock    *types.Block
-	headerByNumberErr           error
-	headerByNumberPassedContext context.Context
-	headerByNumberPassedNumber  *big.Int
-	headerByNumberReturnHeader  *types.Header
-	headerByNumbersReturnHeader []*types.Header
-	headerByNumbersPassedNumber []*big.Int
-	filterLogsErr               error
-	filterLogsPassedContext     context.Context
-	filterLogsPassedQuery       ethereum.FilterQuery
-	filterLogsReturnLogs        []types.Log
-	transactionReceipts         map[string]*types.Receipt
-	err                         error
-	passedBatch                 []core.BatchElem
-	passedMethod                string
-	transactionSenderErr        error
-	transactionReceiptErr       error
-	passedAddress               common.Address
-	passedBlockNumber           *big.Int
+	callContractErr              error
+	callContractPassedContext    context.Context
+	callContractPassedMsg        ethereum.CallMsg
+	callContractPassedNumber     *big.Int
+	callContractReturnBytes      []byte
+	blockByNumberErr             error
+	blockByNumberPassedContext   context.Context
+	blockByNumberPassedNumber    *big.Int
+	blockByNumberReturnBlock     *types.Block
+	headerByNumberErr            error
+	headerByNumberPassedContext  context.Context
+	headerByNumberPassedNumber   *big.Int
+	headerByNumberReturnHeader   *types.Header
+	headerByNumbersReturnHeader  []*types.Header
+	headerByNumbersPassedNumber  []*big.Int
+	filterLogsErr                error
+	filterLogsPassedContext      context.Context
+	filterLogsPassedQuery        ethereum.FilterQuery
+	filterLogsReturnLogs         []types.Log
+	transactionReceipts          map[string]*types.Receipt
+	err                          error
+	passedBatch                  []core.BatchElem
+	passedMethod                 string
+	transactionSenderErr         error
+	transactionReceiptErr        error
+	passedAddress                common.Address
+	passedBlockNumber            *big.Int
+	subscribeStateChangeErr      error
+	passedStateChangeFilterQuery ethereum.FilterQuery
+	passedStateChangePayloadCh   chan<- filters.Payload
 }
 
 func NewMockEthClient() *MockEthClient {
@@ -148,6 +153,13 @@ func (client *MockEthClient) FilterLogs(ctx context.Context, q ethereum.FilterQu
 	return client.filterLogsReturnLogs, client.filterLogsErr
 }
 
+func (client *MockEthClient) SubscribeNewStateChanges(ctx context.Context, q ethereum.FilterQuery, ch chan<- filters.Payload) (ethereum.Subscription, error) {
+	client.passedStateChangeFilterQuery = q
+	client.passedStateChangePayloadCh = ch
+	subscription := rpc.ClientSubscription{}
+	return &subscription, nil
+}
+
 func (client *MockEthClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
 	return common.HexToAddress("0x123"), client.transactionSenderErr
 }
@@ -186,4 +198,9 @@ func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q e
 
 func (client *MockEthClient) AssertBatchCalledWith(method string) {
 	Expect(client.passedMethod).To(Equal(method))
+}
+
+func (client *MockEthClient) AssertSubscribeNewStateChangesCalledWith(filterQuery ethereum.FilterQuery, payloadCh chan<- filters.Payload) {
+	Expect(client.passedStateChangeFilterQuery).To(Equal(filterQuery))
+	Expect(client.passedStateChangePayloadCh).To(Equal(payloadCh))
 }

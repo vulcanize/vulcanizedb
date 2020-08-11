@@ -1,7 +1,11 @@
 package cmd
 
 import (
-	"github.com/ethereum/go-ethereum/statediff"
+	"strings"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
@@ -9,6 +13,7 @@ import (
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // extractDiffsCmd represents the extractDiffs command
@@ -29,10 +34,22 @@ func init() {
 	rootCmd.AddCommand(extractDiffsCmd)
 }
 
+func getContractAddresses() []string {
+	LogWithCommand.Info("Getting contract addresses from config file")
+	contracts := viper.GetStringMap("contract")
+	var addresses []string
+	for contractName := range contracts {
+		address := viper.GetStringMapString("contract." + contractName)["address"]
+		addresses = append(addresses, address)
+	}
+	return addresses
+}
+
 func extractDiffs() {
 	// Setup bc and db objects
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	addressesToWatch := getContractAddresses()
 
 	healthCheckFile := "/tmp/connection"
 	msg := []byte("geth storage fetcher connection established\n")
@@ -40,23 +57,15 @@ func extractDiffs() {
 
 	// initialize fetcher
 	var storageFetcher fetcher.IStorageFetcher
+	logrus.Debug("fetching storage diffs from geth")
 	switch storageDiffsSource {
 	case "geth":
-		logrus.Info("Using original geth patch")
-		logrus.Debug("fetching storage diffs from geth pub sub")
-		rpcClient, _ := getClients()
-		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-		payloadChan := make(chan statediff.Payload)
-
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch, gethStatusWriter)
-	case "new-geth":
-		logrus.Info("Using new geth patch")
-		logrus.Debug("fetching storage diffs from geth pub sub")
-		rpcClient, _ := getClients()
-		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-		payloadChan := make(chan statediff.Payload)
-
-		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.NewGethPatch, gethStatusWriter)
+		logrus.Info("Using new geth patch with filters event system")
+		_, ethClient := getClients()
+		filterQuery := createFilterQuery(addressesToWatch)
+		stateDiffStreamer := streamer.NewEthStateChangeStreamer(ethClient, filterQuery)
+		payloadChan := make(chan filters.Payload)
+		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, gethStatusWriter)
 	default:
 		logrus.Debug("fetching storage diffs from csv")
 		tailer := fs.FileTailer{Path: storageDiffsPath}
@@ -71,5 +80,20 @@ func extractDiffs() {
 	err := extractor.ExtractDiffs()
 	if err != nil {
 		LogWithCommand.Fatalf("extracting diffs failed: %s", err.Error())
+	}
+}
+
+func createFilterQuery(watchedAddresses []string) ethereum.FilterQuery {
+	logrus.Infof("Creating a filter query for %d watched addresses", len(watchedAddresses))
+	addressesToLog := strings.Join(watchedAddresses[:], ", ")
+	logrus.Infof("Watched addresses: %s", addressesToLog)
+
+	var addresses []common.Address
+	for _, addressString := range watchedAddresses {
+		addresses = append(addresses, common.HexToAddress(addressString))
+	}
+
+	return ethereum.FilterQuery{
+		Addresses: addresses,
 	}
 }

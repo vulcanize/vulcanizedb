@@ -21,8 +21,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 )
 
 const ExpectedRowLength = 5
@@ -60,23 +60,7 @@ func FromParityCsvRow(csvRow []string) (RawDiff, error) {
 	}, nil
 }
 
-func FromOldGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
-	var decodedRLPStorageValue []byte
-	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
-	if err != nil {
-		return RawDiff{}, err
-	}
-
-	return RawDiff{
-		HashedAddress: common.BytesToHash(account.Key),
-		BlockHash:     stateDiff.BlockHash,
-		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
-		StorageKey:    common.BytesToHash(storage.Key),
-		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
-	}, nil
-}
-
-func FromNewGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
+func FromGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff, storage filters.StorageDiff) (RawDiff, error) {
 	var decodedRLPStorageValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
 	if err != nil {
@@ -90,13 +74,6 @@ func FromNewGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.St
 		StorageKey:    common.BytesToHash(storage.Key),
 		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
 	}, nil
-}
-
-func ToPersistedDiff(raw RawDiff, id int64) PersistedDiff {
-	return PersistedDiff{
-		RawDiff: raw,
-		ID:      id,
-	}
 }
 
 func HexToKeccak256Hash(hex string) common.Hash {
