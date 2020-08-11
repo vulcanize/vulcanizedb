@@ -21,7 +21,6 @@ import (
 	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -87,6 +86,8 @@ var _ = Describe("Storage row parsing", func() {
 			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 
+			expectedAddress := common.BytesToAddress(accountDiff.Key)
+			Expect(result.Address).To(Equal(expectedAddress))
 			Expect(result.BlockHash).To(Equal(fakes.FakeHash))
 			expectedBlockHeight := int(stateDiff.BlockNumber.Int64())
 			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))

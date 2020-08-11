@@ -37,7 +37,6 @@ type Transformer struct {
 	Address           common.Address
 	StorageKeysLookup KeysLookup
 	Repository        Repository
-	hashedAddress     common.Hash
 }
 
 func (transformer Transformer) GetStorageKeysLookup() KeysLookup {

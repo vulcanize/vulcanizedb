@@ -120,18 +120,21 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 				intHeight := int(height.Int64())
 
 				expectedDiff1 := types.RawDiff{
+					Address:      common.BytesToAddress(test_data.ContractLeafKey[:]),
 					BlockHash:    common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:  intHeight,
 					StorageKey:   crypto.Keccak256Hash(test_data.StorageKey),
 					StorageValue: common.BytesToHash(test_data.SmallStorageValue),
 				}
 				expectedDiff2 := types.RawDiff{
+					Address:      common.BytesToAddress(test_data.AnotherContractLeafKey[:]),
 					BlockHash:    common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:  intHeight,
 					StorageKey:   crypto.Keccak256Hash(test_data.StorageKey),
 					StorageValue: common.BytesToHash(test_data.LargeStorageValue),
 				}
 				expectedDiff3 := types.RawDiff{
+					Address:      common.BytesToAddress(test_data.AnotherContractLeafKey[:]),
 					BlockHash:    common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 					BlockHeight:  intHeight,
 					StorageKey:   crypto.Keccak256Hash(test_data.StorageKey),
