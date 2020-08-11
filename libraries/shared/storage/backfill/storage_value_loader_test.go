@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
@@ -220,33 +219,18 @@ var _ = Describe("StorageValueLoader", func() {
 
 		headerHashBytes := common.HexToHash(blockOneHeader.Hash)
 		expectedDiffOne := types.RawDiff{
-<<<<<<< HEAD
-			BlockHeight:   int(blockOne),
-			BlockHash:     headerHashBytes,
-			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
-			StorageKey:    keyOne,
-			StorageValue:  valueOne,
-		}
-		expectedDiffTwo := types.RawDiff{
-			BlockHeight:   int(blockOne),
-			BlockHash:     headerHashBytes,
-			HashedAddress: crypto.Keccak256Hash(addressTwo[:]),
-			StorageKey:    keyTwo,
-			StorageValue:  valueTwo,
-=======
 			Address:      addressOne,
 			BlockHeight:  int(blockOne),
 			BlockHash:    headerHashBytes,
-			StorageKey:   crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:   keyOne,
 			StorageValue: valueOne,
 		}
 		expectedDiffTwo := types.RawDiff{
 			Address:      addressTwo,
 			BlockHeight:  int(blockOne),
 			BlockHash:    headerHashBytes,
-			StorageKey:   crypto.Keccak256Hash(keyTwo.Bytes()),
+			StorageKey:   keyTwo,
 			StorageValue: valueTwo,
->>>>>>> 041bc44e... Remove hashed address
 		}
 
 		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
@@ -271,21 +255,21 @@ var _ = Describe("StorageValueLoader", func() {
 			Address:      addressOne,
 			BlockHeight:  int(blockOne),
 			BlockHash:    headerHashBytes,
-			StorageKey:   crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:   keyOne,
 			StorageValue: valueOne,
 		}
 		expectedDiffTwo := types.RawDiff{
 			Address:      addressTwo,
 			BlockHeight:  int(blockOne),
 			BlockHash:    headerHashBytes,
-			StorageKey:   crypto.Keccak256Hash(keyTwo.Bytes()),
+			StorageKey:   keyTwo,
 			StorageValue: valueTwo,
 		}
 		expectedDiffThree := types.RawDiff{
 			Address:      addressOne,
 			BlockHeight:  int(blockTwo),
 			BlockHash:    common.HexToHash(blockTwoHeader.Hash),
-			StorageKey:   crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageKey:   keyOne,
 			StorageValue: valueTwo,
 		}
 

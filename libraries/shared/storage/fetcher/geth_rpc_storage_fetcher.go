@@ -88,7 +88,7 @@ func (fetcher GethRpcStorageFetcher) handleDiffPayload(payload filters.Payload, 
 				return
 			}
 
-			logrus.Tracef(addingDiffsLogString, rawDiff.HashedAddress.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
+			logrus.Tracef(addingDiffsLogString, rawDiff.Address.Hex(), rawDiff.BlockHeight, rawDiff.StorageKey.Hex(), rawDiff.StorageValue.Hex())
 			out <- rawDiff
 		}
 	}

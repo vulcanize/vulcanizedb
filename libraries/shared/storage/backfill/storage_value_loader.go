@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -126,7 +125,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 						Address:      address,
 						BlockHash:    blockHash,
 						BlockHeight:  int(blockNumber),
-						StorageKey:   crypto.Keccak256Hash(key.Bytes()),
+						StorageKey:   common.BytesToHash(key.Bytes()),
 						StorageValue: newValueHash,
 					}
 					createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)

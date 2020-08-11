@@ -72,7 +72,7 @@ func FromGethStateDiff(account filters.AccountDiff, stateDiff *filters.StateDiff
 		Address:      common.BytesToAddress(account.Key),
 		BlockHash:    stateDiff.BlockHash,
 		BlockHeight:  int(stateDiff.BlockNumber.Int64()),
-		StorageKey:   crypto.Keccak256Hash(storage.Key),
+		StorageKey:   common.BytesToHash(storage.Key),
 		StorageValue: common.BytesToHash(decodedRLPStorageValue),
 	}, nil
 }

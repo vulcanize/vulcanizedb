@@ -33,7 +33,7 @@ CREATE TYPE public.diff_status AS ENUM (
 -- Name: create_back_filled_diff(bigint, bytea, bytea, bytea, bytea, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) RETURNS void
+CREATE FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -58,10 +58,10 @@ BEGIN
         RETURN;
     END IF;
 
-    INSERT INTO public.storage_diff (block_height, block_hash, hashed_address, storage_key, storage_value,
+    INSERT INTO public.storage_diff (block_height, block_hash, address, storage_key, storage_value,
                                      eth_node_id, from_backfill)
     VALUES (create_back_filled_diff.block_height, create_back_filled_diff.block_hash,
-            create_back_filled_diff.hashed_address, create_back_filled_diff.storage_key,
+            create_back_filled_diff.address, create_back_filled_diff.storage_key,
             create_back_filled_diff.storage_value, create_back_filled_diff.eth_node_id, true)
     ON CONFLICT DO NOTHING;
 
@@ -71,10 +71,10 @@ $$;
 
 
 --
--- Name: FUNCTION create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION create_back_filled_diff(block_height bigint, block_hash bytea, address bytea, storage_key bytea, storage_value bytea, eth_node_id integer); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) IS '@omit';
+COMMENT ON FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) IS '@omit';
 
 
 --
