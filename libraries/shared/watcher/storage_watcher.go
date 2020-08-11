@@ -46,7 +46,7 @@ type IStorageWatcher interface {
 type StorageWatcher struct {
 	db                        *postgres.DB
 	HeaderRepository          datastore.HeaderRepository
-	KeccakAddressTransformers map[common.Address]storage2.ITransformer // keccak hash of an address => transformer
+	AddressTransformers       map[common.Address]storage2.ITransformer // contract address => transformer
 	StorageDiffRepository     storage.DiffRepository
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 	StatusWriter              fs.StatusWriter
@@ -59,7 +59,7 @@ func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter 
 	return StorageWatcher{
 		db:                        db,
 		HeaderRepository:          headerRepository,
-		KeccakAddressTransformers: transformers,
+		AddressTransformers:       transformers,
 		StorageDiffRepository:     storageDiffRepository,
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 		StatusWriter:              statusWriter,
@@ -69,7 +69,7 @@ func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64, statusWriter 
 func (watcher StorageWatcher) AddTransformers(initializers []storage2.TransformerInitializer) {
 	for _, initializer := range initializers {
 		storageTransformer := initializer(watcher.db)
-		watcher.KeccakAddressTransformers[storageTransformer.GetContractAddress()] = storageTransformer
+		watcher.AddressTransformers[storageTransformer.GetContractAddress()] = storageTransformer
 	}
 }
 
@@ -170,7 +170,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 }
 
 func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (storage2.ITransformer, bool) {
-	storageTransformer, ok := watcher.KeccakAddressTransformers[diff.Address]
+	storageTransformer, ok := watcher.AddressTransformers[diff.Address]
 	return storageTransformer, ok
 }
 

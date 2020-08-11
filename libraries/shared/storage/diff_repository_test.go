@@ -59,6 +59,7 @@ var _ = Describe("Storage diffs repository", func() {
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
+			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -89,6 +90,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var persisted types.PersistedDiff
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
+			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -197,6 +199,7 @@ var _ = Describe("Storage diffs repository", func() {
 =======
 		It("sends diffs that are not marked as checked", func() {
 			fakeRawDiff := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  rand.Int(),
 				StorageKey:   test_data.FakeHash(),
@@ -209,7 +212,21 @@ var _ = Describe("Storage diffs repository", func() {
 				EthNodeID: db.NodeID,
 				Status:    storage.New,
 			}
+<<<<<<< HEAD
 			insertTestDiff(fakePersistedDiff, db)
+=======
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+<<<<<<< HEAD
+				hashed_address, storage_key, storage_value, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`, fakePersistedDiff.ID,
+				fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.HashedAddress.Bytes(),
+				fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(), fakePersistedDiff.EthNodeID)
+=======
+				address, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5, $6)`, fakePersistedDiff.ID,
+				fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.Address.Bytes(),
+				fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes())
+>>>>>>> a4eed9d1... Fixes diff repository and migrations
+			Expect(insertErr).NotTo(HaveOccurred())
+>>>>>>> fa657d32... Fixes diff repository and migrations
 
 			diffs, err := repo.GetNewDiffs(0, 1)
 
@@ -227,6 +244,7 @@ var _ = Describe("Storage diffs repository", func() {
 =======
 		It("does not send diff that's marked as checked", func() {
 			fakeRawDiff := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  rand.Int(),
 				StorageKey:   test_data.FakeHash(),
@@ -248,6 +266,7 @@ var _ = Describe("Storage diffs repository", func() {
 				Status:    storage.Transformed,
 				EthNodeID: db.NodeID,
 			}
+<<<<<<< HEAD
 			insertTestDiff(transformedPersistedDiff, db)
 
 			diffs, err := repo.GetNewDiffs(0, 1)
@@ -264,6 +283,21 @@ var _ = Describe("Storage diffs repository", func() {
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(noncanonicalPersistedDiff, db)
+=======
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+<<<<<<< HEAD
+				hashed_address, storage_key, storage_value, checked, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked, fakePersistedDiff.EthNodeID)
+=======
+				address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.Address.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked)
+>>>>>>> a4eed9d1... Fixes diff repository and migrations
+			Expect(insertErr).NotTo(HaveOccurred())
+>>>>>>> fa657d32... Fixes diff repository and migrations
 
 			diffs, err := repo.GetNewDiffs(0, 1)
 
@@ -275,11 +309,13 @@ var _ = Describe("Storage diffs repository", func() {
 			blockZero := rand.Int()
 			for i := 0; i < 2; i++ {
 				fakeRawDiff := types.RawDiff{
+					Address:      test_data.FakeAddress(),
 					BlockHash:    test_data.FakeHash(),
 					BlockHeight:  blockZero + i,
 					StorageKey:   test_data.FakeHash(),
 					StorageValue: test_data.FakeHash(),
 				}
+<<<<<<< HEAD
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,
 					ID:        rand.Int63(),
@@ -287,6 +323,19 @@ var _ = Describe("Storage diffs repository", func() {
 					EthNodeID: db.NodeID,
 				}
 				insertTestDiff(persistedDiff, db)
+=======
+				_, insertErr := db.Exec(`INSERT INTO public.storage_diff (block_height, block_hash,
+<<<<<<< HEAD
+				hashed_address, storage_key, storage_value, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6)`, fakeRawDiff.BlockHeight,
+					fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(),
+					fakeRawDiff.StorageValue.Bytes(), nodeID)
+=======
+				address, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)`, fakeRawDiff.BlockHeight,
+					fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.Address.Bytes(), fakeRawDiff.StorageKey.Bytes(),
+					fakeRawDiff.StorageValue.Bytes())
+>>>>>>> a4eed9d1... Fixes diff repository and migrations
+				Expect(insertErr).NotTo(HaveOccurred())
+>>>>>>> fa657d32... Fixes diff repository and migrations
 			}
 
 			minID := 0
@@ -312,6 +361,7 @@ var _ = Describe("Storage diffs repository", func() {
 	Describe("MarkChecked", func() {
 		It("marks a diff as checked", func() {
 			fakeRawDiff := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  rand.Int(),
 				StorageKey:   test_data.FakeHash(),
@@ -324,8 +374,24 @@ var _ = Describe("Storage diffs repository", func() {
 				Status:    storage.New,
 				EthNodeID: db.NodeID,
 			}
+<<<<<<< HEAD
 			insertTestDiff(fakePersistedDiff, db)
 		})
+=======
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+<<<<<<< HEAD
+				hashed_address, storage_key, storage_value, checked, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked, fakePersistedDiff.EthNodeID)
+=======
+				address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.Address.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked)
+>>>>>>> a4eed9d1... Fixes diff repository and migrations
+			Expect(insertErr).NotTo(HaveOccurred())
+>>>>>>> fa657d32... Fixes diff repository and migrations
 
 		It("marks a diff as transformed", func() {
 			err := repo.MarkTransformed(fakePersistedDiff.ID)
@@ -372,6 +438,7 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends first diff for a given block height", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  blockHeight,
 				StorageKey:   test_data.FakeHash(),
@@ -391,6 +458,7 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends a diff for the next block height if one doesn't exist for the block passed in", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  blockHeight,
 				StorageKey:   test_data.FakeHash(),
@@ -412,6 +480,7 @@ var _ = Describe("Storage diffs repository", func() {
 <<<<<<< HEAD
 =======
 			fakeRawDiff := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  rand.Int(),
 				StorageKey:   test_data.FakeHash(),

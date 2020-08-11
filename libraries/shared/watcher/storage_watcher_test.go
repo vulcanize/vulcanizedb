@@ -43,7 +43,7 @@ var _ = Describe("Storage Watcher", func() {
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
-			Expect(w.KeccakAddressTransformers[fakeAddress]).To(Equal(fakeTransformer))
+			Expect(w.AddressTransformers[fakeAddress]).To(Equal(fakeTransformer))
 		})
 	})
 
@@ -149,7 +149,7 @@ var _ = Describe("Storage Watcher", func() {
 				storageWatcher = watcher.StorageWatcher{
 					HeaderRepository:          mockHeaderRepository,
 					StorageDiffRepository:     mockDiffsRepository,
-					KeccakAddressTransformers: map[common.Address]storage.ITransformer{},
+					AddressTransformers:       map[common.Address]storage.ITransformer{},
 					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
 					StatusWriter:              &statusWriter,
 				}

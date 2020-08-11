@@ -41,6 +41,7 @@ DECLARE
         SELECT storage_diff.storage_value
         FROM public.storage_diff
         WHERE storage_diff.block_height <= create_back_filled_diff.block_height
+          AND storage_diff.address = create_back_filled_diff.address
           AND storage_diff.storage_key = create_back_filled_diff.storage_key
         ORDER BY storage_diff.block_height DESC
         LIMIT 1
@@ -394,6 +395,7 @@ ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
 
 CREATE TABLE public.storage_diff (
     id bigint NOT NULL,
+    address bytea,
     block_height bigint,
     block_hash bytea,
     storage_key bytea,
@@ -669,11 +671,11 @@ ALTER TABLE ONLY public.receipts
 
 
 --
--- Name: storage_diff storage_diff_block_height_block_hash_storage_key_storage_va_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: storage_diff storage_diff_address_block_height_block_hash_storage_key_st_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.storage_diff
-    ADD CONSTRAINT storage_diff_block_height_block_hash_storage_key_storage_va_key UNIQUE (block_height, block_hash, storage_key, storage_value);
+    ADD CONSTRAINT storage_diff_address_block_height_block_hash_storage_key_st_key UNIQUE (address, block_height, block_hash, storage_key, storage_value);
 
 
 --

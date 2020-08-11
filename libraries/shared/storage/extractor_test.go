@@ -48,6 +48,7 @@ var _ = Describe("Storage diff extractor", func() {
 
 		It("persists fetched storage diff", func() {
 			fakeDiff := types.RawDiff{
+				Address:      test_data.FakeAddress(),
 				BlockHash:    test_data.FakeHash(),
 				BlockHeight:  rand.Int(),
 				StorageKey:   test_data.FakeHash(),
