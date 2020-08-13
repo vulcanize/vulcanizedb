@@ -17,10 +17,10 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: create_back_filled_diff(bigint, bytea, bytea, bytea, bytea); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_back_filled_diff(bigint, bytea, bytea, bytea, bytea, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea) RETURNS void
+CREATE FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -46,10 +46,10 @@ BEGIN
     END IF;
 
     INSERT INTO public.storage_diff (block_height, block_hash, hashed_address, storage_key, storage_value,
-                                     from_backfill)
+                                     eth_node_id, from_backfill)
     VALUES (create_back_filled_diff.block_height, create_back_filled_diff.block_hash,
             create_back_filled_diff.hashed_address, create_back_filled_diff.storage_key,
-            create_back_filled_diff.storage_value, true)
+            create_back_filled_diff.storage_value, create_back_filled_diff.eth_node_id, true)
     ON CONFLICT DO NOTHING;
 
     RETURN;
@@ -58,10 +58,10 @@ $$;
 
 
 --
--- Name: FUNCTION create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea); Type: COMMENT; Schema: public; Owner: -
+-- Name: FUNCTION create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea) IS '@omit';
+COMMENT ON FUNCTION public.create_back_filled_diff(block_height bigint, block_hash bytea, hashed_address bytea, storage_key bytea, storage_value bytea, eth_node_id integer) IS '@omit';
 
 
 --
@@ -389,6 +389,7 @@ CREATE TABLE public.storage_diff (
     hashed_address bytea,
     storage_key bytea,
     storage_value bytea,
+    eth_node_id integer NOT NULL,
     checked boolean DEFAULT false NOT NULL,
     from_backfill boolean DEFAULT false NOT NULL
 );
@@ -769,6 +770,13 @@ CREATE INDEX storage_diff_checked_index ON public.storage_diff USING btree (chec
 
 
 --
+-- Name: storage_diff_eth_node; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX storage_diff_eth_node ON public.storage_diff USING btree (eth_node_id);
+
+
+--
 -- Name: transactions_header; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -844,6 +852,14 @@ ALTER TABLE ONLY public.receipts
 
 ALTER TABLE ONLY public.receipts
     ADD CONSTRAINT receipts_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: storage_diff storage_diff_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.storage_diff
+    ADD CONSTRAINT storage_diff_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
