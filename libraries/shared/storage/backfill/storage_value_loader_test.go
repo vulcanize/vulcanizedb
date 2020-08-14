@@ -123,8 +123,8 @@ var _ = Describe("StorageValueLoader", func() {
 	It("fetches headers in the given block range", func() {
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
-		Expect(headerRepo.GetHeadersInRangeStartingBlock).To(Equal(blockOne))
-		Expect(headerRepo.GetHeadersInRangeEndingBlock).To(Equal(blockTwo))
+		Expect(headerRepo.GetHeadersInRangeStartingBlocks).To(ConsistOf(blockOne))
+		Expect(headerRepo.GetHeadersInRangeEndingBlocks).To(ConsistOf(blockTwo))
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
