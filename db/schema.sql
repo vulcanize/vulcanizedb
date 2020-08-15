@@ -133,6 +133,20 @@ COMMENT ON FUNCTION public.get_or_create_header(block_number bigint, hash charac
 
 
 --
+-- Name: set_event_log_updated(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_event_log_updated() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: set_header_updated(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -258,7 +272,9 @@ CREATE TABLE public.event_logs (
     tx_index integer,
     log_index integer,
     raw jsonb,
-    transformed boolean DEFAULT false NOT NULL
+    transformed boolean DEFAULT false NOT NULL,
+    created timestamp without time zone DEFAULT now() NOT NULL,
+    updated timestamp without time zone DEFAULT now() NOT NULL
 );
 
 
@@ -798,6 +814,13 @@ CREATE INDEX storage_diff_unrecognized_status_index ON public.storage_diff USING
 --
 
 CREATE INDEX transactions_header ON public.transactions USING btree (header_id);
+
+
+--
+-- Name: event_logs event_log_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER event_log_updated BEFORE UPDATE ON public.event_logs FOR EACH ROW EXECUTE PROCEDURE public.set_event_log_updated();
 
 
 --

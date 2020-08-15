@@ -71,7 +71,8 @@ var _ = Describe("Event log repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbLog rawEventLog
-			lookupErr := db.Get(&dbLog, `SELECT * FROM public.event_logs`)
+			lookupErr := db.Get(&dbLog, `SELECT id, header_id, address, topics, data, block_number, block_hash,
+       			tx_hash, tx_index, log_index, transformed, raw FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(dbLog.ID).NotTo(BeZero())
 			Expect(dbLog.HeaderID).To(Equal(headerID))
@@ -119,7 +120,8 @@ var _ = Describe("Event log repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			var dbLog rawEventLog
-			lookupErr := db.Get(&dbLog, `SELECT * FROM public.event_logs`)
+			lookupErr := db.Get(&dbLog, `SELECT id, header_id, address, topics, data, block_number, block_hash, 
+       			tx_hash, tx_index, log_index, transformed, raw FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 
 			var logTopics []common.Hash
