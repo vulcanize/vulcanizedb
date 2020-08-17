@@ -4,7 +4,7 @@ CREATE TABLE public.receipts
     id                  SERIAL PRIMARY KEY,
     transaction_id      INTEGER NOT NULL REFERENCES public.transactions (id) ON DELETE CASCADE,
     header_id           INTEGER NOT NULL REFERENCES public.headers (id) ON DELETE CASCADE,
-    contract_address_id INTEGER NOT NULL REFERENCES public.addresses (id) ON DELETE CASCADE,
+    contract_address_id BIGINT  NOT NULL REFERENCES public.addresses (id) ON DELETE CASCADE,
     cumulative_gas_used NUMERIC,
     gas_used            NUMERIC,
     state_root          VARCHAR(66),
