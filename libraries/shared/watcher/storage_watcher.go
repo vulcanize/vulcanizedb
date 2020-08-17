@@ -144,9 +144,9 @@ func (watcher StorageWatcher) transformDiffs() error {
 func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	t, watching := watcher.getTransformer(diff)
 	if !watching {
-		markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
-		if markCheckedErr != nil {
-			return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
+		markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
+		if markTransformedErr != nil {
+			return fmt.Errorf("error marking diff transformed: %w", markTransformedErr)
 		}
 		return nil
 	}
@@ -165,7 +165,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 		return fmt.Errorf("error executing storage transformer: %w", executeErr)
 	}
 
-	markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
+	markCheckedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
 	if markCheckedErr != nil {
 		return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
 	}
@@ -198,7 +198,7 @@ func (watcher StorageWatcher) handleDiffWithInvalidHeaderHash(diff types.Persist
 		return fmt.Errorf(msg, diff.ID, maxBlockErr)
 	}
 	if diff.BlockHeight < int(maxBlock)-ReorgWindow {
-		return watcher.StorageDiffRepository.MarkChecked(diff.ID)
+		return watcher.StorageDiffRepository.MarkTransformed(diff.ID)
 	}
 	return nil
 }

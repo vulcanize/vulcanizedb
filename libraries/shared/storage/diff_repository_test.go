@@ -286,23 +286,56 @@ var _ = Describe("Storage diffs repository", func() {
 		})
 	})
 
-	Describe("MarkChecked", func() {
-		It("marks a diff as checked", func() {
-			fakePersistedDiff := types.PersistedDiff{
+	Describe("Changing the diff status", func() {
+		var fakePersistedDiff types.PersistedDiff
+		BeforeEach(func() {
+			fakePersistedDiff = types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
 				Status:    "new",
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(fakePersistedDiff, db)
+		})
 
-			err := repo.MarkChecked(fakePersistedDiff.ID)
+		It("marks a diff as transformed", func() {
+			err := repo.MarkTransformed(fakePersistedDiff.ID)
 
 			Expect(err).NotTo(HaveOccurred())
-			var checked string
-			checkedErr := db.Get(&checked, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
-			Expect(checkedErr).NotTo(HaveOccurred())
-			Expect(checked).To(Equal("transformed"))
+			var status string
+			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			Expect(getStatusErr).NotTo(HaveOccurred())
+			Expect(status).To(Equal("transformed"))
+		})
+
+		It("marks a diff as unrecognized", func() {
+			err := repo.MarkUnrecognized(fakePersistedDiff.ID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var status string
+			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			Expect(getStatusErr).NotTo(HaveOccurred())
+			Expect(status).To(Equal("unrecognized"))
+		})
+
+		It("marks a diff as noncanonical", func() {
+			err := repo.MarkNoncanonical(fakePersistedDiff.ID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var status string
+			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			Expect(getStatusErr).NotTo(HaveOccurred())
+			Expect(status).To(Equal("noncanonical"))
+		})
+
+		It("marks a diff as unwatched", func() {
+			err := repo.MarkUnwatched(fakePersistedDiff.ID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var status string
+			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			Expect(getStatusErr).NotTo(HaveOccurred())
+			Expect(status).To(Equal("unwatched"))
 		})
 	})
 

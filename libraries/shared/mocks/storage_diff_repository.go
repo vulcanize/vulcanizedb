@@ -54,9 +54,22 @@ func (repository *MockStorageDiffRepository) GetNewDiffs(minID, limit int) ([]ty
 	return repository.GetNewDiffsDiffs, err
 }
 
-func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
+func (repository *MockStorageDiffRepository) MarkTransformed(id int64) error {
 	repository.MarkCheckedPassedID = id
 	return nil
+}
+
+func (repository *MockStorageDiffRepository) MarkNoncanonical(id int64) error {
+	panic("implement me")
+}
+
+func (repository *MockStorageDiffRepository) MarkUnrecognized(id int64) error {
+	repository.MarkUnrecognizedPassedID = id
+	return nil
+}
+
+func (repository *MockStorageDiffRepository) MarkUnwatched(id int64) error {
+	panic("implement me")
 }
 
 func (repository *MockStorageDiffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {
