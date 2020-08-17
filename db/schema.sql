@@ -403,7 +403,7 @@ CREATE TABLE public.storage_diff (
     storage_key bytea,
     storage_value bytea,
     eth_node_id integer NOT NULL,
-    checked public.diff_status DEFAULT 'new'::public.diff_status NOT NULL,
+    status public.diff_status DEFAULT 'new'::public.diff_status NOT NULL,
     from_backfill boolean DEFAULT false NOT NULL
 );
 
@@ -776,17 +776,17 @@ CREATE INDEX receipts_transaction ON public.receipts USING btree (transaction_id
 
 
 --
--- Name: storage_diff_checked_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX storage_diff_checked_index ON public.storage_diff USING btree (checked) WHERE (checked = 'new'::public.diff_status);
-
-
---
 -- Name: storage_diff_eth_node; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX storage_diff_eth_node ON public.storage_diff USING btree (eth_node_id);
+
+
+--
+-- Name: storage_diff_new_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX storage_diff_new_status_index ON public.storage_diff USING btree (status) WHERE (status = 'new'::public.diff_status);
 
 
 --

@@ -64,7 +64,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
 			Expect(persisted.StorageValue).To(Equal(fakeStorageDiff.StorageValue))
-			Expect(persisted.Checked).To(Equal("new"))
+			Expect(persisted.Status).To(Equal("new"))
 		})
 
 		It("does not duplicate storage diffs", func() {
@@ -95,7 +95,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
 			Expect(persisted.StorageValue).To(Equal(fakeStorageDiff.StorageValue))
-			Expect(persisted.Checked).To(Equal("new"))
+			Expect(persisted.Status).To(Equal("new"))
 		})
 
 		It("marks diff as back-filled", func() {
@@ -199,7 +199,7 @@ var _ = Describe("Storage diffs repository", func() {
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
 				EthNodeID: db.NodeID,
-				Checked:   "new",
+				Status:    "new",
 			}
 			insertTestDiff(fakePersistedDiff, db)
 
@@ -213,7 +213,7 @@ var _ = Describe("Storage diffs repository", func() {
 			transformedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Checked:   "transformed",
+				Status:    "transformed",
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(transformedPersistedDiff, db)
@@ -228,7 +228,7 @@ var _ = Describe("Storage diffs repository", func() {
 			noncanonicalPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Checked:   "noncanonical",
+				Status:    "noncanonical",
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(noncanonicalPersistedDiff, db)
@@ -243,7 +243,7 @@ var _ = Describe("Storage diffs repository", func() {
 			unrecognizedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Checked:   "unrecognized",
+				Status:    "unrecognized",
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(unrecognizedPersistedDiff, db)
@@ -267,7 +267,7 @@ var _ = Describe("Storage diffs repository", func() {
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,
 					ID:        rand.Int63(),
-					Checked:   "new",
+					Status:    "new",
 					EthNodeID: db.NodeID,
 				}
 				insertTestDiff(persistedDiff, db)
@@ -291,7 +291,7 @@ var _ = Describe("Storage diffs repository", func() {
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Checked:   "new",
+				Status:    "new",
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(fakePersistedDiff, db)
@@ -300,7 +300,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var checked string
-			checkedErr := db.Get(&checked, `SELECT checked FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			checkedErr := db.Get(&checked, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(checkedErr).NotTo(HaveOccurred())
 			Expect(checked).To(Equal("transformed"))
 		})
@@ -352,7 +352,7 @@ var _ = Describe("Storage diffs repository", func() {
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Checked:   "transformed",
+				Status:    "transformed",
 				EthNodeID: db.NodeID,
 			}
 
@@ -379,9 +379,9 @@ var _ = Describe("Storage diffs repository", func() {
 func insertTestDiff(persistedDiff types.PersistedDiff, db *postgres.DB) {
 	rawDiff := persistedDiff.RawDiff
 	_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
-				hashed_address, storage_key, storage_value, checked, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				hashed_address, storage_key, storage_value, status, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		persistedDiff.ID, rawDiff.BlockHeight, rawDiff.BlockHash.Bytes(),
 		rawDiff.HashedAddress.Bytes(), rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes(),
-		persistedDiff.Checked, persistedDiff.EthNodeID)
+		persistedDiff.Status, persistedDiff.EthNodeID)
 	Expect(insertErr).NotTo(HaveOccurred())
 }

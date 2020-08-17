@@ -37,7 +37,7 @@ type RawDiff struct {
 
 type PersistedDiff struct {
 	RawDiff
-	Checked      string
+	Status       string
 	FromBackfill bool `db:"from_backfill"`
 	ID           int64
 	HeaderID     int64 `db:"header_id"`
