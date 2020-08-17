@@ -160,6 +160,20 @@ END;
 $$;
 
 
+--
+-- Name: set_transaction_updated(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_transaction_updated() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
@@ -456,7 +470,9 @@ CREATE TABLE public.transactions (
     tx_from character varying(44),
     tx_index integer,
     tx_to character varying(44),
-    value numeric
+    value numeric,
+    created timestamp without time zone DEFAULT now() NOT NULL,
+    updated timestamp without time zone DEFAULT now() NOT NULL
 );
 
 
@@ -828,6 +844,13 @@ CREATE TRIGGER event_log_updated BEFORE UPDATE ON public.event_logs FOR EACH ROW
 --
 
 CREATE TRIGGER header_updated BEFORE UPDATE ON public.headers FOR EACH ROW EXECUTE PROCEDURE public.set_header_updated();
+
+
+--
+-- Name: transactions transaction_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER transaction_updated BEFORE UPDATE ON public.transactions FOR EACH ROW EXECUTE PROCEDURE public.set_transaction_updated();
 
 
 --
