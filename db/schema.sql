@@ -248,7 +248,7 @@ ALTER SEQUENCE public.eth_nodes_id_seq OWNED BY public.eth_nodes.id;
 --
 
 CREATE TABLE public.event_logs (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     header_id integer NOT NULL,
     address bigint NOT NULL,
     topics bytea[],
@@ -268,7 +268,6 @@ CREATE TABLE public.event_logs (
 --
 
 CREATE SEQUENCE public.event_logs_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
