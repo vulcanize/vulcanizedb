@@ -194,7 +194,7 @@ var _ = Describe("Storage diffs repository", func() {
 	})
 
 	Describe("GetNewDiffs", func() {
-		It("sends diffs that are not marked as checked", func() {
+		It("sends diffs that are marked as 'new'", func() {
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -209,7 +209,22 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffs).To(ConsistOf(fakePersistedDiff))
 		})
 
-		It("does not send diff that are marked as transformed", func() {
+		It("sends diffs that are marked as 'unrecognized'", func() {
+			unrecognizedPersistedDiff := types.PersistedDiff{
+				RawDiff:   fakeStorageDiff,
+				ID:        rand.Int63(),
+				Status:    "unrecognized",
+				EthNodeID: db.NodeID,
+			}
+			insertTestDiff(unrecognizedPersistedDiff, db)
+
+			diffs, err := repo.GetNewDiffs(0, 1)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(ConsistOf(unrecognizedPersistedDiff))
+		})
+
+		It("does not send diffs that are marked as transformed", func() {
 			transformedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -224,7 +239,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(diffs).To(BeEmpty())
 		})
 
-		It("does not send diff that are marked as noncanonical", func() {
+		It("does not send diffs that are marked as noncanonical", func() {
 			noncanonicalPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
@@ -232,21 +247,6 @@ var _ = Describe("Storage diffs repository", func() {
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(noncanonicalPersistedDiff, db)
-
-			diffs, err := repo.GetNewDiffs(0, 1)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(diffs).To(BeEmpty())
-		})
-
-		It("does not send diff that are marked as unrecognized", func() {
-			unrecognizedPersistedDiff := types.PersistedDiff{
-				RawDiff:   fakeStorageDiff,
-				ID:        rand.Int63(),
-				Status:    "unrecognized",
-				EthNodeID: db.NodeID,
-			}
-			insertTestDiff(unrecognizedPersistedDiff, db)
 
 			diffs, err := repo.GetNewDiffs(0, 1)
 
