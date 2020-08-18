@@ -313,7 +313,7 @@ var _ = Describe("Storage Watcher", func() {
 					Expect(mockDiffsRepository.MarkCheckedPassedID).NotTo(Equal(fakePersistedDiff.ID))
 				})
 
-				It("marks diff checked if block height less than max known block height minus reorg window", func() {
+				It("marks diff noncanonical if block height less than max known block height minus reorg window", func() {
 					mockHeaderRepository.MostRecentHeaderBlockNumber = int64(blockNumber + watcher.ReorgWindow + 1)
 					mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
@@ -321,7 +321,7 @@ var _ = Describe("Storage Watcher", func() {
 
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError(fakes.FakeError))
-					Expect(mockDiffsRepository.MarkCheckedPassedID).To(Equal(fakePersistedDiff.ID))
+					Expect(mockDiffsRepository.MarkNoncanonicalPassedID).To(Equal(fakePersistedDiff.ID))
 				})
 
 				It("does not mark diff checked if block height is within reorg window", func() {

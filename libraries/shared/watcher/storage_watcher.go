@@ -161,9 +161,9 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 		return fmt.Errorf("error executing storage transformer: %w", executeErr)
 	}
 
-	markCheckedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
-	if markCheckedErr != nil {
-		return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
+	markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
+	if markTransformedErr != nil {
+		return fmt.Errorf("error marking diff transformed: %w", markTransformedErr)
 	}
 
 	return nil
@@ -194,8 +194,7 @@ func (watcher StorageWatcher) handleDiffWithInvalidHeaderHash(diff types.Persist
 		return fmt.Errorf(msg, diff.ID, maxBlockErr)
 	}
 	if diff.BlockHeight < int(maxBlock)-ReorgWindow {
-		//TODO: is this the noncanonical case?
-		return watcher.StorageDiffRepository.MarkTransformed(diff.ID)
+		return watcher.StorageDiffRepository.MarkNoncanonical(diff.ID)
 	}
 	return nil
 }
