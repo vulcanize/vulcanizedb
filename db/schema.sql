@@ -790,6 +790,13 @@ CREATE INDEX storage_diff_new_status_index ON public.storage_diff USING btree (s
 
 
 --
+-- Name: storage_diff_unrecognized_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX storage_diff_unrecognized_status_index ON public.storage_diff USING btree (status) WHERE (status = 'unrecognized'::public.diff_status);
+
+
+--
 -- Name: transactions_header; Type: INDEX; Schema: public; Owner: -
 --
 

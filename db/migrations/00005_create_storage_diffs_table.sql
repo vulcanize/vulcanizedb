@@ -23,6 +23,8 @@ CREATE TABLE public.storage_diff
 
 CREATE INDEX storage_diff_new_status_index
     ON public.storage_diff (status) WHERE status = 'new';
+CREATE INDEX storage_diff_unrecognized_status_index
+    ON public.storage_diff (status) WHERE status = 'unrecognized';
 CREATE INDEX storage_diff_eth_node
     ON public.storage_diff (eth_node_id);
 
