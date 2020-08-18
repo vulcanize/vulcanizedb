@@ -29,6 +29,7 @@ type MockStorageDiffRepository struct {
 	GetNewDiffsPassedMinIDs                    []int
 	GetNewDiffsPassedLimits                    []int
 	MarkCheckedPassedID                        int64
+	MarkUnrecognizedPassedID                   int64
 	GetFirstDiffIDToReturn                     int64
 	GetFirstDiffIDErr                          error
 	GetFirstDiffBlockHeightPassed              int64

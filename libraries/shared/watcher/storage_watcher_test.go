@@ -367,6 +367,17 @@ var _ = Describe("Storage Watcher", func() {
 					Expect(mockDiffsRepository.MarkCheckedPassedID).NotTo(Equal(fakePersistedDiff.ID))
 				})
 
+				It("marks diff as 'unrecognized' when transforming the diff returns a ErrKeyNotFound error", func() {
+					mockTransformer.ExecuteErr = types.ErrKeyNotFound
+					mockDiffsRepository.GetNewDiffsErrors = []error{nil, types.ErrKeyNotFound}
+
+					err := storageWatcher.Execute()
+
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(types.ErrKeyNotFound))
+					Expect(mockDiffsRepository.MarkUnrecognizedPassedID).To(Equal(fakePersistedDiff.ID))
+				})
+
 				It("marks diff checked if transformer execution doesn't fail", func() {
 					mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{fakePersistedDiff}
 					mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
