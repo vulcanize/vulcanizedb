@@ -30,6 +30,7 @@ type MockStorageDiffRepository struct {
 	GetNewDiffsPassedLimits                    []int
 	MarkCheckedPassedID                        int64
 	MarkUnrecognizedPassedID                   int64
+	MarkUnwatchedPassedID                   int64
 	GetFirstDiffIDToReturn                     int64
 	GetFirstDiffIDErr                          error
 	GetFirstDiffBlockHeightPassed              int64
@@ -70,7 +71,8 @@ func (repository *MockStorageDiffRepository) MarkUnrecognized(id int64) error {
 }
 
 func (repository *MockStorageDiffRepository) MarkUnwatched(id int64) error {
-	panic("implement me")
+	repository.MarkUnwatchedPassedID = id
+	return nil
 }
 
 func (repository *MockStorageDiffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {

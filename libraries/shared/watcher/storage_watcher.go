@@ -140,9 +140,9 @@ func (watcher StorageWatcher) transformDiffs() error {
 func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	t, watching := watcher.getTransformer(diff)
 	if !watching {
-		markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
-		if markTransformedErr != nil {
-			return fmt.Errorf("error marking diff transformed: %w", markTransformedErr)
+		markUnwatchedErr := watcher.StorageDiffRepository.MarkUnwatched(diff.ID)
+		if markUnwatchedErr != nil {
+			return fmt.Errorf("error marking diff unwatched: %w", markUnwatchedErr)
 		}
 		return nil
 	}

@@ -124,7 +124,7 @@ var _ = Describe("Storage Watcher", func() {
 			Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(0, 0))
 		})
 
-		It("marks diff as checked if no transformer is watching its address", func() {
+		It("marks diff as unwatched if no transformer is watching its address", func() {
 			unwatchedDiff := types.PersistedDiff{
 				RawDiff: types.RawDiff{
 					HashedAddress: test_data.FakeHash(),
@@ -138,7 +138,7 @@ var _ = Describe("Storage Watcher", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
-			Expect(mockDiffsRepository.MarkCheckedPassedID).To(Equal(unwatchedDiff.ID))
+			Expect(mockDiffsRepository.MarkUnwatchedPassedID).To(Equal(unwatchedDiff.ID))
 		})
 
 		Describe("When the watcher is configured to skip old diffs", func() {
