@@ -9,7 +9,6 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/jmoiron/sqlx v0.0.0-20181024163419-82935fac6c1a
 	github.com/lib/pq v1.0.0
-	github.com/makerdao/vdb-mcd-transformers v0.2.17
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.10.0
@@ -18,7 +17,6 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.2
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 )
 

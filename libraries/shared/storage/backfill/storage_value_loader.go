@@ -125,7 +125,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 						Address:      address,
 						BlockHash:    blockHash,
 						BlockHeight:  int(blockNumber),
-						StorageKey:   common.BytesToHash(key.Bytes()),
+						StorageKey:   key,
 						StorageValue: newValueHash,
 					}
 					createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)

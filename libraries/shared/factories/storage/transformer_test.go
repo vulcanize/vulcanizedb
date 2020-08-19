@@ -23,6 +23,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -132,7 +133,7 @@ var _ = Describe("Storage transformer", func() {
 				ID:       rand.Int63(),
 				HeaderID: fakeHeaderID,
 				RawDiff: types.RawDiff{
-					Address:      fakes.FakeAddress,
+					Address:      test_data.FakeAddress(),
 					BlockHash:    common.HexToHash(fakeBlockHash),
 					BlockHeight:  fakeBlockNumber,
 					StorageKey:   common.Hash{},
