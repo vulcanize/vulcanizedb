@@ -17,6 +17,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA public;
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
+--
 -- Name: diff_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -53,18 +67,15 @@ BEGIN
     IF last_storage_value = create_back_filled_diff.storage_value THEN
         RETURN;
     END IF;
-
     IF last_storage_value is null and create_back_filled_diff.storage_value = empty_storage_value THEN
         RETURN;
     END IF;
-
     INSERT INTO public.storage_diff (block_height, block_hash, address, storage_key, storage_value,
                                      eth_node_id, from_backfill)
     VALUES (create_back_filled_diff.block_height, create_back_filled_diff.block_hash,
             create_back_filled_diff.address, create_back_filled_diff.storage_key,
             create_back_filled_diff.storage_value, create_back_filled_diff.eth_node_id, true)
     ON CONFLICT DO NOTHING;
-
     RETURN;
 END
 $$;
@@ -106,20 +117,16 @@ BEGIN
     IF matching_header_id != 0 THEN
         RETURN matching_header_id;
     END IF;
-
     IF nonmatching_header_id != 0 AND block_number <= max_block_number - 15 THEN
         RETURN nonmatching_header_id;
     END IF;
-
     IF nonmatching_header_id != 0 AND block_number > max_block_number - 15 THEN
         DELETE FROM public.headers WHERE id = nonmatching_header_id;
     END IF;
-
     INSERT INTO public.headers (hash, block_number, raw, block_timestamp, eth_node_id)
     VALUES (get_or_create_header.hash, get_or_create_header.block_number, get_or_create_header.raw,
             get_or_create_header.block_timestamp, get_or_create_header.eth_node_id)
     RETURNING id INTO inserted_header_id;
-
     RETURN inserted_header_id;
 END
 $$;
