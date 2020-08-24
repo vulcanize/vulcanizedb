@@ -9,10 +9,7 @@ $(BIN)/ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 
 ## Migration tool
-GOOSE = $(BIN)/goose
-$(BIN)/goose:
-	go get -u -d github.com/pressly/goose/cmd/goose
-	go build -tags='no_mysql no_sqlite' -o $(BIN)/goose github.com/pressly/goose/cmd/goose
+GOOSE = go run -tags='no_mysql no_sqlite3 no_mssql no_redshift' github.com/pressly/goose/cmd/goose
 
 ## Source linter
 LINT = $(BIN)/golint
@@ -27,7 +24,7 @@ $(BIN)/gometalinter.v2:
 
 
 .PHONY: installtools
-installtools: | $(LINT) $(GOOSE) $(GINKGO)
+installtools: | $(LINT) $(GINKGO)
 	echo "Installing tools"
 
 .PHONY: metalint
@@ -100,30 +97,30 @@ checkmigname:
 # Migration operations
 ## Rollback the last migration
 .PHONY: rollback
-rollback: $(GOOSE) checkdbvars
+rollback: checkdbvars
 	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" down
 	pg_dump -n 'public' -O -s $(CONNECT_STRING) > db/schema.sql
 
 
 ## Rollbackt to a select migration (id/timestamp)
 .PHONY: rollback_to
-rollback_to: $(GOOSE) checkmigration checkdbvars
+rollback_to: checkmigration checkdbvars
 	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
 
 ## Apply all migrations not already run
 .PHONY: migrate
-migrate: $(GOOSE) checkdbvars
+migrate: checkdbvars
 	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" up
 	pg_dump -n 'public' -O -s $(CONNECT_STRING) > db/schema.sql
 
 ## Create a new migration file
 .PHONY: new_migration
-new_migration: $(GOOSE) checkmigname
+new_migration: checkmigname
 	$(GOOSE) -dir db/migrations create $(NAME) sql
 
 ## Check which migrations are applied at the moment
 .PHONY: migration_status
-migration_status: $(GOOSE) checkdbvars
+migration_status: checkdbvars
 	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" status
 
 # Convert timestamped migrations to versioned (to be run in CI);
