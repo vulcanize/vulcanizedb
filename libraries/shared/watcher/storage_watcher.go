@@ -119,12 +119,12 @@ func (watcher StorageWatcher) transformDiffs() error {
 	for {
 		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
 		if extractErr != nil {
-			return fmt.Errorf("error getting unchecked diffs: %w", extractErr)
+			return fmt.Errorf("error getting new diffs: %w", extractErr)
 		}
 		for _, diff := range diffs {
 			transformErr := watcher.transformDiff(diff)
 			if handleErr := watcher.handleTransformError(transformErr, diff); handleErr != nil {
-				return handleErr
+				return fmt.Errorf("error transforming diff: %w", handleErr)
 			}
 		}
 		lenDiffs := len(diffs)
@@ -142,7 +142,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	if !watching {
 		markUnwatchedErr := watcher.StorageDiffRepository.MarkUnwatched(diff.ID)
 		if markUnwatchedErr != nil {
-			return fmt.Errorf("error marking diff unwatched: %w", markUnwatchedErr)
+			return fmt.Errorf("error marking diff %s: %w", storage.Unwatched, markUnwatchedErr)
 		}
 		return nil
 	}
@@ -163,7 +163,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 
 	markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
 	if markTransformedErr != nil {
-		return fmt.Errorf("error marking diff transformed: %w", markTransformedErr)
+		return fmt.Errorf("error marking diff %s: %w", storage.Transformed, markTransformedErr)
 	}
 
 	return nil

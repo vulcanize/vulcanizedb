@@ -64,7 +64,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
 			Expect(persisted.StorageValue).To(Equal(fakeStorageDiff.StorageValue))
-			Expect(persisted.Status).To(Equal("new"))
+			Expect(persisted.Status).To(Equal(storage.New))
 		})
 
 		It("does not duplicate storage diffs", func() {
@@ -199,7 +199,7 @@ var _ = Describe("Storage diffs repository", func() {
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
 				EthNodeID: db.NodeID,
-				Status:    "new",
+				Status:    storage.New,
 			}
 			insertTestDiff(fakePersistedDiff, db)
 
@@ -213,7 +213,7 @@ var _ = Describe("Storage diffs repository", func() {
 			unrecognizedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Status:    "unrecognized",
+				Status:    storage.Unrecognized,
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(unrecognizedPersistedDiff, db)
@@ -228,7 +228,7 @@ var _ = Describe("Storage diffs repository", func() {
 			transformedPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Status:    "transformed",
+				Status:    storage.Transformed,
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(transformedPersistedDiff, db)
@@ -243,7 +243,7 @@ var _ = Describe("Storage diffs repository", func() {
 			noncanonicalPersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Status:    "noncanonical",
+				Status:    storage.Noncanonical,
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(noncanonicalPersistedDiff, db)
@@ -267,7 +267,7 @@ var _ = Describe("Storage diffs repository", func() {
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,
 					ID:        rand.Int63(),
-					Status:    "new",
+					Status:    storage.New,
 					EthNodeID: db.NodeID,
 				}
 				insertTestDiff(persistedDiff, db)
@@ -292,7 +292,7 @@ var _ = Describe("Storage diffs repository", func() {
 			fakePersistedDiff = types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Status:    "new",
+				Status:    storage.New,
 				EthNodeID: db.NodeID,
 			}
 			insertTestDiff(fakePersistedDiff, db)
@@ -305,7 +305,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var status string
 			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(getStatusErr).NotTo(HaveOccurred())
-			Expect(status).To(Equal("transformed"))
+			Expect(status).To(Equal(storage.Transformed))
 		})
 
 		It("marks a diff as unrecognized", func() {
@@ -315,7 +315,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var status string
 			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(getStatusErr).NotTo(HaveOccurred())
-			Expect(status).To(Equal("unrecognized"))
+			Expect(status).To(Equal(storage.Unrecognized))
 		})
 
 		It("marks a diff as noncanonical", func() {
@@ -325,7 +325,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var status string
 			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(getStatusErr).NotTo(HaveOccurred())
-			Expect(status).To(Equal("noncanonical"))
+			Expect(status).To(Equal(storage.Noncanonical))
 		})
 
 		It("marks a diff as unwatched", func() {
@@ -335,7 +335,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var status string
 			getStatusErr := db.Get(&status, `SELECT status FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(getStatusErr).NotTo(HaveOccurred())
-			Expect(status).To(Equal("unwatched"))
+			Expect(status).To(Equal(storage.Unwatched))
 		})
 	})
 
@@ -385,7 +385,7 @@ var _ = Describe("Storage diffs repository", func() {
 			fakePersistedDiff := types.PersistedDiff{
 				RawDiff:   fakeStorageDiff,
 				ID:        rand.Int63(),
-				Status:    "transformed",
+				Status:    storage.Transformed,
 				EthNodeID: db.NodeID,
 			}
 
