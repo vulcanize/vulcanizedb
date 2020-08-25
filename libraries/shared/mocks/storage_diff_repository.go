@@ -29,6 +29,9 @@ type MockStorageDiffRepository struct {
 	GetNewDiffsPassedMinIDs                    []int
 	GetNewDiffsPassedLimits                    []int
 	MarkCheckedPassedID                        int64
+	MarkUnrecognizedPassedID                   int64
+	MarkNoncanonicalPassedID                   int64
+	MarkUnwatchedPassedID                      int64
 	GetFirstDiffIDToReturn                     int64
 	GetFirstDiffIDErr                          error
 	GetFirstDiffBlockHeightPassed              int64
@@ -54,8 +57,23 @@ func (repository *MockStorageDiffRepository) GetNewDiffs(minID, limit int) ([]ty
 	return repository.GetNewDiffsDiffs, err
 }
 
-func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
+func (repository *MockStorageDiffRepository) MarkTransformed(id int64) error {
 	repository.MarkCheckedPassedID = id
+	return nil
+}
+
+func (repository *MockStorageDiffRepository) MarkNoncanonical(id int64) error {
+	repository.MarkNoncanonicalPassedID = id
+	return nil
+}
+
+func (repository *MockStorageDiffRepository) MarkUnrecognized(id int64) error {
+	repository.MarkUnrecognizedPassedID = id
+	return nil
+}
+
+func (repository *MockStorageDiffRepository) MarkUnwatched(id int64) error {
+	repository.MarkUnwatchedPassedID = id
 	return nil
 }
 

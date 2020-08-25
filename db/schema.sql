@@ -17,6 +17,19 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: diff_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.diff_status AS ENUM (
+    'new',
+    'transformed',
+    'unrecognized',
+    'noncanonical',
+    'unwatched'
+);
+
+
+--
 -- Name: create_back_filled_diff(bigint, bytea, bytea, bytea, bytea, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -390,7 +403,7 @@ CREATE TABLE public.storage_diff (
     storage_key bytea,
     storage_value bytea,
     eth_node_id integer NOT NULL,
-    checked boolean DEFAULT false NOT NULL,
+    status public.diff_status DEFAULT 'new'::public.diff_status NOT NULL,
     from_backfill boolean DEFAULT false NOT NULL
 );
 
@@ -763,17 +776,24 @@ CREATE INDEX receipts_transaction ON public.receipts USING btree (transaction_id
 
 
 --
--- Name: storage_diff_checked_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX storage_diff_checked_index ON public.storage_diff USING btree (checked) WHERE (checked = false);
-
-
---
 -- Name: storage_diff_eth_node; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX storage_diff_eth_node ON public.storage_diff USING btree (eth_node_id);
+
+
+--
+-- Name: storage_diff_new_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX storage_diff_new_status_index ON public.storage_diff USING btree (status) WHERE (status = 'new'::public.diff_status);
+
+
+--
+-- Name: storage_diff_unrecognized_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX storage_diff_unrecognized_status_index ON public.storage_diff USING btree (status) WHERE (status = 'unrecognized'::public.diff_status);
 
 
 --

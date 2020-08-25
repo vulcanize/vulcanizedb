@@ -119,16 +119,12 @@ func (watcher StorageWatcher) transformDiffs() error {
 	for {
 		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
 		if extractErr != nil {
-			return fmt.Errorf("error getting unchecked diffs: %w", extractErr)
+			return fmt.Errorf("error getting new diffs: %w", extractErr)
 		}
 		for _, diff := range diffs {
 			transformErr := watcher.transformDiff(diff)
-			if transformErr != nil {
-				if isCommonTransformError(transformErr) {
-					logrus.Tracef("error transforming diff: %s", transformErr.Error())
-				} else {
-					logrus.Infof("error transforming diff: %s", transformErr.Error())
-				}
+			if handleErr := watcher.handleTransformError(transformErr, diff); handleErr != nil {
+				return fmt.Errorf("error transforming diff: %w", handleErr)
 			}
 		}
 		lenDiffs := len(diffs)
@@ -144,9 +140,9 @@ func (watcher StorageWatcher) transformDiffs() error {
 func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	t, watching := watcher.getTransformer(diff)
 	if !watching {
-		markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
-		if markCheckedErr != nil {
-			return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
+		markUnwatchedErr := watcher.StorageDiffRepository.MarkUnwatched(diff.ID)
+		if markUnwatchedErr != nil {
+			return fmt.Errorf("error marking diff %s: %w", storage.Unwatched, markUnwatchedErr)
 		}
 		return nil
 	}
@@ -165,9 +161,9 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 		return fmt.Errorf("error executing storage transformer: %w", executeErr)
 	}
 
-	markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
-	if markCheckedErr != nil {
-		return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
+	markTransformedErr := watcher.StorageDiffRepository.MarkTransformed(diff.ID)
+	if markTransformedErr != nil {
+		return fmt.Errorf("error marking diff %s: %w", storage.Transformed, markTransformedErr)
 	}
 
 	return nil
@@ -198,7 +194,24 @@ func (watcher StorageWatcher) handleDiffWithInvalidHeaderHash(diff types.Persist
 		return fmt.Errorf(msg, diff.ID, maxBlockErr)
 	}
 	if diff.BlockHeight < int(maxBlock)-ReorgWindow {
-		return watcher.StorageDiffRepository.MarkChecked(diff.ID)
+		return watcher.StorageDiffRepository.MarkNoncanonical(diff.ID)
+	}
+	return nil
+}
+
+func (watcher StorageWatcher) handleTransformError(transformErr error, diff types.PersistedDiff) error {
+	if transformErr != nil {
+		if errors.Is(transformErr, types.ErrKeyNotFound) {
+			markUnrecognizedErr := watcher.StorageDiffRepository.MarkUnrecognized(diff.ID)
+			if markUnrecognizedErr != nil {
+				return markUnrecognizedErr
+			}
+		}
+		if isCommonTransformError(transformErr) {
+			logrus.Tracef("error transforming diff: %s", transformErr.Error())
+		} else {
+			logrus.Infof("error transforming diff: %s", transformErr.Error())
+		}
 	}
 	return nil
 }
