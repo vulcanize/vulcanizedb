@@ -31,6 +31,7 @@ type Plugin struct {
 	FileName     string
 	Save         bool
 	Home         string
+	Schema       string
 }
 
 type Transformer struct {

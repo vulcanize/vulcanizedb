@@ -67,6 +67,10 @@ func (m *manager) setDB() error {
 }
 
 func (m *manager) RunMigrations() error {
+	if len(m.GenConfig.Schema) <= 0 {
+		return fmt.Errorf("Config is missing a schema, required for plugin migrations")
+	}
+
 	// Get paths to db migrations from the plugin config
 	paths, err := m.GenConfig.GetMigrationsPaths()
 	if err != nil {
@@ -149,6 +153,14 @@ func (m *manager) fixAndRun(path string) error {
 			return errors.New(fmt.Sprintf("could not open db: %s", setErr.Error()))
 		}
 	}
+
+	_, execErr := m.db.Exec(fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", m.GenConfig.Schema))
+	if execErr != nil {
+		return execErr
+	}
+
+	goose.SetTableName(fmt.Sprintf("%s.goose_db_version", m.GenConfig.Schema))
+
 	// Fix the migrations
 	fixErr := goose.Fix(m.tmpMigDir)
 	if fixErr != nil {
