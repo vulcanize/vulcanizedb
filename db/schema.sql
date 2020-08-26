@@ -155,7 +155,7 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE public.addresses (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     address character varying(42),
     hashed_address character varying(66)
 );
@@ -166,7 +166,6 @@ CREATE TABLE public.addresses (
 --
 
 CREATE SEQUENCE public.addresses_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -249,9 +248,9 @@ ALTER SEQUENCE public.eth_nodes_id_seq OWNED BY public.eth_nodes.id;
 --
 
 CREATE TABLE public.event_logs (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     header_id integer NOT NULL,
-    address integer NOT NULL,
+    address bigint NOT NULL,
     topics bytea[],
     data bytea,
     block_number bigint,
@@ -269,7 +268,6 @@ CREATE TABLE public.event_logs (
 --
 
 CREATE SEQUENCE public.event_logs_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -361,7 +359,7 @@ CREATE TABLE public.receipts (
     id integer NOT NULL,
     transaction_id integer NOT NULL,
     header_id integer NOT NULL,
-    contract_address_id integer NOT NULL,
+    contract_address_id bigint NOT NULL,
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),

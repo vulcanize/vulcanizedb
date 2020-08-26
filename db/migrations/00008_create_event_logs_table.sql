@@ -1,9 +1,9 @@
 -- +goose Up
 CREATE TABLE public.event_logs
 (
-    id           SERIAL PRIMARY KEY,
+    id           BIGSERIAL PRIMARY KEY,
     header_id    INTEGER NOT NULL REFERENCES public.headers (id) ON DELETE CASCADE,
-    address      INTEGER NOT NULL REFERENCES public.addresses (id) ON DELETE CASCADE,
+    address      BIGINT  NOT NULL REFERENCES public.addresses (id) ON DELETE CASCADE,
     topics       BYTEA[],
     data         BYTEA,
     block_number BIGINT,

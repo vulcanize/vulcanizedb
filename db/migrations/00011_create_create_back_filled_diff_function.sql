@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.create_back_filled_diff(block_height BIGINT, block_hash BYTEA, hashed_address BYTEA,
-                                                          storage_key BYTEA, storage_value BYTEA, eth_node_id INTEGER) RETURNS VOID AS
+                                                          storage_key BYTEA, storage_value BYTEA,
+                                                          eth_node_id INTEGER) RETURNS VOID AS
 $$
 DECLARE
     last_storage_value  BYTEA := (
