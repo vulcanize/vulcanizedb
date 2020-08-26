@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -104,16 +103,14 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 	blockHash := common.HexToHash(headerHashStr)
 
 	for address, chunkedKeysToValues := range r.storageByAddress {
-		keccakOfAddress := crypto.Keccak256Hash(address[:])
 		for chunkIndex, currentKeysToValues := range chunkedKeysToValues {
 			var keys []storageKey
 			for key, _ := range currentKeysToValues {
 				keys = append(keys, key)
 			}
 			logrus.WithFields(logrus.Fields{
-				"Address":       address.Hex(),
-				"HashedAddress": keccakOfAddress.Hex(),
-				"BlockNumber":   blockNumber,
+				"Address":     address.Hex(),
+				"BlockNumber": blockNumber,
 			}).Infof("Getting and persisting %v storage values", len(keys))
 			newKeysToValues, getStorageValuesErr := r.bc.BatchGetStorageAt(address, keys, blockNumberBigInt)
 			if getStorageValuesErr != nil {
@@ -125,11 +122,11 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 				if newValueHash != currentKeysToValues[key] {
 					// update last known value to new value if changed
 					diff := types.RawDiff{
-						HashedAddress: keccakOfAddress,
-						BlockHash:     blockHash,
-						BlockHeight:   int(blockNumber),
-						StorageKey:    key,
-						StorageValue:  newValueHash,
+						Address:      address,
+						BlockHash:    blockHash,
+						BlockHeight:  int(blockNumber),
+						StorageKey:   key,
+						StorageValue: newValueHash,
 					}
 					createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
 					if createDiffErr != nil {

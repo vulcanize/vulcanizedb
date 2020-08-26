@@ -41,11 +41,11 @@ var _ = Describe("Storage diffs repository", func() {
 		test_config.CleanTestDB(db)
 		repo = storage.NewDiffRepository(db)
 		fakeStorageDiff = types.RawDiff{
-			HashedAddress: test_data.FakeHash(),
-			BlockHash:     test_data.FakeHash(),
-			BlockHeight:   rand.Int(),
-			StorageKey:    test_data.FakeHash(),
-			StorageValue:  test_data.FakeHash(),
+			Address:      test_data.FakeAddress(),
+			BlockHash:    test_data.FakeHash(),
+			BlockHeight:  rand.Int(),
+			StorageKey:   test_data.FakeHash(),
+			StorageValue: test_data.FakeHash(),
 		}
 	})
 
@@ -59,7 +59,7 @@ var _ = Describe("Storage diffs repository", func() {
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
-			Expect(persisted.HashedAddress).To(Equal(fakeStorageDiff.HashedAddress))
+			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -90,7 +90,7 @@ var _ = Describe("Storage diffs repository", func() {
 			var persisted types.PersistedDiff
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
-			Expect(persisted.HashedAddress).To(Equal(fakeStorageDiff.HashedAddress))
+			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
 			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
 			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
@@ -258,11 +258,11 @@ var _ = Describe("Storage diffs repository", func() {
 			blockZero := rand.Int()
 			for i := 0; i < 2; i++ {
 				fakeRawDiff := types.RawDiff{
-					HashedAddress: test_data.FakeHash(),
-					BlockHash:     test_data.FakeHash(),
-					BlockHeight:   blockZero + i,
-					StorageKey:    test_data.FakeHash(),
-					StorageValue:  test_data.FakeHash(),
+					Address:      test_data.FakeAddress(),
+					BlockHash:    test_data.FakeHash(),
+					BlockHeight:  blockZero + i,
+					StorageKey:   test_data.FakeHash(),
+					StorageValue: test_data.FakeHash(),
 				}
 				persistedDiff := types.PersistedDiff{
 					RawDiff:   fakeRawDiff,
@@ -343,11 +343,11 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends first diff for a given block height", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
-				HashedAddress: test_data.FakeHash(),
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   blockHeight,
-				StorageKey:    test_data.FakeHash(),
-				StorageValue:  test_data.FakeHash(),
+				Address:      test_data.FakeAddress(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
 			}
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
@@ -363,11 +363,11 @@ var _ = Describe("Storage diffs repository", func() {
 		It("sends a diff for the next block height if one doesn't exist for the block passed in", func() {
 			blockHeight := fakeStorageDiff.BlockHeight
 			fakeStorageDiff2 := types.RawDiff{
-				HashedAddress: test_data.FakeHash(),
-				BlockHash:     test_data.FakeHash(),
-				BlockHeight:   blockHeight,
-				StorageKey:    test_data.FakeHash(),
-				StorageValue:  test_data.FakeHash(),
+				Address:      test_data.FakeAddress(),
+				BlockHash:    test_data.FakeHash(),
+				BlockHeight:  blockHeight,
+				StorageKey:   test_data.FakeHash(),
+				StorageValue: test_data.FakeHash(),
 			}
 
 			id1, create1Err := repo.CreateStorageDiff(fakeStorageDiff)
@@ -412,9 +412,9 @@ var _ = Describe("Storage diffs repository", func() {
 func insertTestDiff(persistedDiff types.PersistedDiff, db *postgres.DB) {
 	rawDiff := persistedDiff.RawDiff
 	_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
-				hashed_address, storage_key, storage_value, status, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				address, storage_key, storage_value, status, eth_node_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		persistedDiff.ID, rawDiff.BlockHeight, rawDiff.BlockHash.Bytes(),
-		rawDiff.HashedAddress.Bytes(), rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes(),
+		rawDiff.Address.Bytes(), rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes(),
 		persistedDiff.Status, persistedDiff.EthNodeID)
 	Expect(insertErr).NotTo(HaveOccurred())
 }

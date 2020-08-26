@@ -48,8 +48,8 @@ func (extractor DiffExtractor) persistDiff(rawDiff types.RawDiff) {
 	_, err := extractor.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logrus.Tracef("ignoring duplicate diff. Block number: %v, blockHash: %v, hashedAddress: %v, storageKey: %v, storageValue: %v",
-				rawDiff.BlockHeight, rawDiff.BlockHash.Hex(), rawDiff.HashedAddress, rawDiff.StorageKey, rawDiff.StorageValue)
+			logrus.Tracef("ignoring duplicate diff. Block number: %v, blockHash: %v, address: %v, storageKey: %v, storageValue: %v",
+				rawDiff.BlockHeight, rawDiff.BlockHash.Hex(), rawDiff.Address, rawDiff.StorageKey, rawDiff.StorageValue)
 			return
 		}
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())

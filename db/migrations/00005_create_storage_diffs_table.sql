@@ -10,15 +10,16 @@ CREATE TYPE public.diff_status AS ENUM (
 CREATE TABLE public.storage_diff
 (
     id             BIGSERIAL PRIMARY KEY,
+    address        BYTEA,
     block_height   BIGINT,
     block_hash     BYTEA,
-    hashed_address BYTEA,
     storage_key    BYTEA,
     storage_value  BYTEA,
     eth_node_id    INTEGER     NOT NULL REFERENCES public.eth_nodes (id) ON DELETE CASCADE,
     status         diff_status NOT NULL DEFAULT 'new',
     from_backfill  BOOLEAN     NOT NULL DEFAULT FALSE,
-    UNIQUE (block_height, block_hash, hashed_address, storage_key, storage_value)
+    UNIQUE (block_height, block_hash, address, storage_key, storage_value)
+
 );
 
 CREATE INDEX storage_diff_new_status_index

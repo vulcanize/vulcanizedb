@@ -21,7 +21,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
@@ -44,9 +43,8 @@ var _ = Describe("address lookup", func() {
 	})
 
 	type dbAddress struct {
-		Id            int64
-		Address       string
-		HashedAddress string `db:"hashed_address"`
+		Id      int64
+		Address string
 	}
 
 	Describe("GetOrCreateAddress", func() {
@@ -55,10 +53,9 @@ var _ = Describe("address lookup", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := types.HexToKeccak256Hash(address).Hex()
-			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
+			expectedAddress := dbAddress{Id: addressId, Address: address}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 
@@ -118,10 +115,9 @@ var _ = Describe("address lookup", func() {
 			Expect(commitErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := types.HexToKeccak256Hash(address).Hex()
-			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
+			expectedAddress := dbAddress{Id: addressId, Address: address}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 

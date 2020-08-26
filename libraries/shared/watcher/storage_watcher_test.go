@@ -37,13 +37,13 @@ var _ = Describe("Storage Watcher", func() {
 	var statusWriter fakes.MockStatusWriter
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
-			fakeHashedAddress := types.HexToKeccak256Hash("0x12345")
-			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
+			fakeAddress := fakes.FakeAddress
+			fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
 			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1, &statusWriter)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
-			Expect(w.KeccakAddressTransformers[fakeHashedAddress]).To(Equal(fakeTransformer))
+			Expect(w.AddressTransformers[fakeAddress]).To(Equal(fakeTransformer))
 		})
 	})
 
@@ -87,7 +87,7 @@ var _ = Describe("Storage Watcher", func() {
 				diffID = diffID + i
 				diff := types.PersistedDiff{
 					RawDiff: types.RawDiff{
-						HashedAddress: test_data.FakeHash(),
+						Address: test_data.FakeAddress(),
 					},
 					ID: int64(diffID),
 				}
@@ -109,7 +109,7 @@ var _ = Describe("Storage Watcher", func() {
 				diffID = diffID + i
 				diff := types.PersistedDiff{
 					RawDiff: types.RawDiff{
-						HashedAddress: test_data.FakeHash(),
+						Address: test_data.FakeAddress(),
 					},
 					ID: int64(diffID),
 				}
@@ -127,7 +127,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("marks diff as unwatched if no transformer is watching its address", func() {
 			unwatchedDiff := types.PersistedDiff{
 				RawDiff: types.RawDiff{
-					HashedAddress: test_data.FakeHash(),
+					Address: test_data.FakeAddress(),
 				},
 				ID: rand.Int63(),
 			}
@@ -149,7 +149,7 @@ var _ = Describe("Storage Watcher", func() {
 				storageWatcher = watcher.StorageWatcher{
 					HeaderRepository:          mockHeaderRepository,
 					StorageDiffRepository:     mockDiffsRepository,
-					KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
+					AddressTransformers:       map[common.Address]storage.ITransformer{},
 					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
 					StatusWriter:              &statusWriter,
 				}
@@ -158,7 +158,7 @@ var _ = Describe("Storage Watcher", func() {
 					diffID = diffID + i
 					diff := types.PersistedDiff{
 						RawDiff: types.RawDiff{
-							HashedAddress: test_data.FakeHash(),
+							Address: test_data.FakeAddress(),
 						},
 						ID: int64(diffID),
 					}
@@ -192,7 +192,7 @@ var _ = Describe("Storage Watcher", func() {
 					diffID = diffID + i
 					diff := types.PersistedDiff{
 						RawDiff: types.RawDiff{
-							HashedAddress: test_data.FakeHash(),
+							Address: test_data.FakeAddress(),
 						},
 						ID: int64(diffID),
 					}
@@ -247,22 +247,22 @@ var _ = Describe("Storage Watcher", func() {
 
 		Describe("when diff's address is watched", func() {
 			var (
-				hashedAddress   common.Hash
+				contractAddress common.Address
 				mockTransformer *mocks.MockStorageTransformer
 			)
 
 			BeforeEach(func() {
-				hashedAddress = types.HexToKeccak256Hash("0x" + fakes.RandomString(20))
-				mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
+				contractAddress = test_data.FakeAddress()
+				mockTransformer = &mocks.MockStorageTransformer{Address: contractAddress}
 				storageWatcher.AddTransformers([]storage.TransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
 			It("does not mark diff checked if no matching header", func() {
 				diffWithoutHeader := types.PersistedDiff{
 					RawDiff: types.RawDiff{
-						HashedAddress: hashedAddress,
-						BlockHash:     test_data.FakeHash(),
-						BlockHeight:   rand.Int(),
+						Address:     contractAddress,
+						BlockHash:   test_data.FakeHash(),
+						BlockHeight: rand.Int(),
 					},
 					ID: rand.Int63(),
 				}
@@ -286,11 +286,11 @@ var _ = Describe("Storage Watcher", func() {
 				BeforeEach(func() {
 					blockNumber = rand.Int()
 					fakeRawDiff := types.RawDiff{
-						HashedAddress: hashedAddress,
-						BlockHash:     test_data.FakeHash(),
-						BlockHeight:   blockNumber,
-						StorageKey:    test_data.FakeHash(),
-						StorageValue:  test_data.FakeHash(),
+						Address:      contractAddress,
+						BlockHash:    test_data.FakeHash(),
+						BlockHeight:  blockNumber,
+						StorageKey:   test_data.FakeHash(),
+						StorageValue: test_data.FakeHash(),
 					}
 					mockHeaderRepository.GetHeaderByBlockNumberReturnID = int64(blockNumber)
 					mockHeaderRepository.GetHeaderByBlockNumberReturnHash = test_data.FakeHash().Hex()
@@ -342,8 +342,8 @@ var _ = Describe("Storage Watcher", func() {
 				BeforeEach(func() {
 					fakeBlockHash := test_data.FakeHash()
 					fakeRawDiff := types.RawDiff{
-						HashedAddress: hashedAddress,
-						BlockHash:     fakeBlockHash,
+						Address:   contractAddress,
+						BlockHash: fakeBlockHash,
 					}
 
 					mockHeaderRepository.GetHeaderByBlockNumberReturnID = rand.Int63()

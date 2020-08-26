@@ -23,6 +23,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -43,14 +44,6 @@ var _ = Describe("Storage transformer", func() {
 			StorageKeysLookup: storageKeysLookup,
 			Repository:        repository,
 		}
-	})
-
-	It("returns the keccaked contract address being watched", func() {
-		fakeAddress := fakes.FakeAddress
-		keccakOfAddress := types.HexToKeccak256Hash(fakeAddress.Hex())
-		t.Address = fakeAddress
-
-		Expect(t.KeccakContractAddress()).To(Equal(keccakOfAddress))
 	})
 
 	It("returns the contract address being watched", func() {
@@ -86,11 +79,11 @@ var _ = Describe("Storage transformer", func() {
 			ID:       rand.Int63(),
 			HeaderID: fakeHeaderID,
 			RawDiff: types.RawDiff{
-				HashedAddress: common.Hash{},
-				BlockHash:     common.HexToHash(fakeBlockHash),
-				BlockHeight:   fakeBlockNumber,
-				StorageKey:    common.Hash{},
-				StorageValue:  rawValue.Hash(),
+				Address:      fakes.FakeAddress,
+				BlockHash:    common.HexToHash(fakeBlockHash),
+				BlockHeight:  fakeBlockNumber,
+				StorageKey:   common.Hash{},
+				StorageValue: rawValue.Hash(),
 			},
 		}
 
@@ -140,11 +133,11 @@ var _ = Describe("Storage transformer", func() {
 				ID:       rand.Int63(),
 				HeaderID: fakeHeaderID,
 				RawDiff: types.RawDiff{
-					HashedAddress: common.Hash{},
-					BlockHash:     common.HexToHash(fakeBlockHash),
-					BlockHeight:   fakeBlockNumber,
-					StorageKey:    common.Hash{},
-					StorageValue:  rawValue.Hash(),
+					Address:      test_data.FakeAddress(),
+					BlockHash:    common.HexToHash(fakeBlockHash),
+					BlockHeight:  fakeBlockNumber,
+					StorageKey:   common.Hash{},
+					StorageValue: rawValue.Hash(),
 				},
 			}
 
