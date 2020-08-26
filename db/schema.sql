@@ -156,8 +156,7 @@ SET default_with_oids = false;
 
 CREATE TABLE public.addresses (
     id bigint NOT NULL,
-    address character varying(42),
-    hashed_address character varying(66)
+    address character varying(42)
 );
 
 
@@ -671,11 +670,11 @@ ALTER TABLE ONLY public.receipts
 
 
 --
--- Name: storage_diff storage_diff_address_block_height_block_hash_storage_key_st_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: storage_diff storage_diff_block_height_block_hash_address_storage_key_st_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.storage_diff
-    ADD CONSTRAINT storage_diff_address_block_height_block_hash_storage_key_st_key UNIQUE (address, block_height, block_hash, storage_key, storage_value);
+    ADD CONSTRAINT storage_diff_block_height_block_hash_address_storage_key_st_key UNIQUE (block_height, block_hash, address, storage_key, storage_value);
 
 
 --
