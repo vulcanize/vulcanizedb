@@ -10,8 +10,6 @@ RUN go build
 # I think this should build the same version of goose that was already downloaded as part of go.mod,
 # but we should validate that.
 RUN go install -tags='no_mysql no_sqlite3 no_mssql no_redshift' github.com/pressly/goose/cmd/goose
-RUN find / -name goose -print
-RUN which goose
 
 FROM golang:alpine
 
