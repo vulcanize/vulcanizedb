@@ -143,8 +143,8 @@ dockerbuild:
 
 .PHONY: headersync
 headersync: STARTING_BLOCK_NUMBER ?= 10000000
-headersync: HOST ?= "host.docker.internal"
-headersync: DATABASE_PASSWORD ?= "postgres"
+headersync: HOST ?= host.docker.internal
+headersync: DATABASE_PASSWORD ?= postgres
 headersync:
 	test -n "$(NAME)" # $$(NAME) - Database Name
 	test -n "$(CLIENT_IPCPATH)" # $$(CLIENT_IPCPATH)
