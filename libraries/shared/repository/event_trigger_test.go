@@ -21,7 +21,6 @@ var _ = Describe("event updated trigger", func() {
 		var insertHeaderErr error
 		headerID, insertHeaderErr = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 		Expect(insertHeaderErr).NotTo(HaveOccurred())
-
 	})
 
 	type dbEvent struct {

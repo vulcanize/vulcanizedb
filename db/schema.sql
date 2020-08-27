@@ -161,6 +161,20 @@ $$;
 
 
 --
+-- Name: set_receipt_updated(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_receipt_updated() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: set_storage_updated(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -408,7 +422,9 @@ CREATE TABLE public.receipts (
     state_root character varying(66),
     status integer,
     tx_hash character varying(66),
-    rlp bytea
+    rlp bytea,
+    created timestamp without time zone DEFAULT now() NOT NULL,
+    updated timestamp without time zone DEFAULT now() NOT NULL
 );
 
 
@@ -858,6 +874,13 @@ CREATE TRIGGER event_log_updated BEFORE UPDATE ON public.event_logs FOR EACH ROW
 --
 
 CREATE TRIGGER header_updated BEFORE UPDATE ON public.headers FOR EACH ROW EXECUTE PROCEDURE public.set_header_updated();
+
+
+--
+-- Name: receipts receipt_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER receipt_updated BEFORE UPDATE ON public.receipts FOR EACH ROW EXECUTE PROCEDURE public.set_receipt_updated();
 
 
 --
