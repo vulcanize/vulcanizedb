@@ -142,7 +142,6 @@ dockerbuild:
 	docker build -t $(IMAGE) -f dockerfiles/$(IMAGE)/Dockerfile .
 
 .PHONY: headersync
-headersync: IMAGE = 'header_sync'
 headersync: STARTING_BLOCK_NUMBER ?= 10000000
 headersync: HOST ?= "host.docker.internal"
 headersync: DATABASE_PASSWORD ?= "postgres"
