@@ -61,7 +61,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 			Expect(id).NotTo(BeZero())
 			var persisted types.PersistedDiff
-			getErr := db.Get(&persisted, `SELECT id, hashed_address, block_hash, block_height, storage_key, storage_value FROM public.storage_diff`)
+			getErr := db.Get(&persisted, `SELECT id, address, block_hash, block_height, storage_key, storage_value, status FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
 			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
@@ -109,7 +109,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 			Expect(createErr).NotTo(HaveOccurred())
 			var persisted types.PersistedDiff
-			getErr := db.Get(&persisted, `SELECT hashed_address, block_hash, block_height, storage_key, storage_value FROM public.storage_diff`)
+			getErr := db.Get(&persisted, `SELECT address, block_hash, block_height, storage_key, storage_value, status FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
