@@ -41,6 +41,7 @@ var composeCmd = &cobra.Command{
 [exporter]
     home     = "github.com/makerdao/vulcanizedb"
     name     = "exampleTransformerExporter"
+    schema   = "<plugin schema>"
     save     = false
     transformerNames = [
         "transformer1",
