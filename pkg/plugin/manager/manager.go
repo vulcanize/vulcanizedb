@@ -68,7 +68,7 @@ func (m *manager) setDB() error {
 
 func (m *manager) RunMigrations() error {
 	if len(m.GenConfig.Schema) <= 0 {
-		return fmt.Errorf("Config is missing a schema, required for plugin migrations")
+		return fmt.Errorf("config is missing a schema, required for plugin migrations")
 	}
 
 	// Get paths to db migrations from the plugin config
