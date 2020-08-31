@@ -8,6 +8,7 @@
 
 [exporter]
     home     = "github.com/makerdao/vulcanizedb"
+    schema   = "public"
     name     = "accountTransformerExporter"
     save     = false
     transformerNames = [
