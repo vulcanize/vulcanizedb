@@ -219,6 +219,7 @@ func prepConfig() error {
 	genConfig = config.Plugin{
 		Transformers: transformers,
 		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
+		Schema:       viper.GetString("exporter.schema"),
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
 		Home:         viper.GetString("exporter.home"),
