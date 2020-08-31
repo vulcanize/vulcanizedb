@@ -49,6 +49,11 @@ var _ = Describe("Storage diffs repository", func() {
 		}
 	})
 
+	type dbStorageDiff struct {
+		Created string
+		Updated string
+	}
+
 	Describe("CreateStorageDiff", func() {
 		It("adds a storage diff to the db, returning id", func() {
 			id, createErr := repo.CreateStorageDiff(fakeStorageDiff)
@@ -56,7 +61,7 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 			Expect(id).NotTo(BeZero())
 			var persisted types.PersistedDiff
-			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
+			getErr := db.Get(&persisted, `SELECT id, address, block_hash, block_height, storage_key, storage_value, status FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
 			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
@@ -80,6 +85,22 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
 		})
+
+		It("indicates when a record was created or updated", func() {
+			id, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			var storageDiffUpdatedRes dbStorageDiff
+			initialStorageErr := db.Get(&storageDiffUpdatedRes, `SELECT created, updated FROM public.storage_diff`)
+			Expect(initialStorageErr).NotTo(HaveOccurred())
+			Expect(storageDiffUpdatedRes.Created).To(Equal(storageDiffUpdatedRes.Updated))
+
+			_, updateErr := db.Exec(`UPDATE public.storage_diff SET block_hash = '{"new_block_hash"}' where id = $1`, id)
+			Expect(updateErr).NotTo(HaveOccurred())
+			updatedDiffErr := db.Get(&storageDiffUpdatedRes, `SELECT created, updated FROM public.storage_diff`)
+			Expect(updatedDiffErr).NotTo(HaveOccurred())
+			Expect(storageDiffUpdatedRes.Created).NotTo(Equal(storageDiffUpdatedRes.Updated))
+		})
 	})
 
 	Describe("CreateBackFilledStorageValue", func() {
@@ -88,7 +109,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 			Expect(createErr).NotTo(HaveOccurred())
 			var persisted types.PersistedDiff
-			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
+			getErr := db.Get(&persisted, `SELECT address, block_hash, block_height, storage_key, storage_value, status FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.Address).To(Equal(fakeStorageDiff.Address))
 			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))

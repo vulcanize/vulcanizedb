@@ -60,7 +60,9 @@ type rawEventLog struct {
 
 func (repo EventLogRepository) GetUntransformedEventLogs(minID, limit int) ([]core.EventLog, error) {
 	var rawLogs []rawEventLog
-	query := fmt.Sprintf("SELECT * FROM public.event_logs WHERE transformed = false AND id > %d ORDER BY id ASC LIMIT %d", minID, limit)
+	query := fmt.Sprintf("SELECT id, header_id, address, topics, data, block_number, block_hash,"+
+		"tx_hash, tx_index, log_index, transformed, raw FROM public.event_logs "+
+		"WHERE transformed = false AND id > %d ORDER BY id ASC LIMIT %d", minID, limit)
 	err := repo.db.Select(&rawLogs, query)
 	if err != nil {
 		return nil, err

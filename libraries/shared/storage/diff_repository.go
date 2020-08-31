@@ -78,7 +78,8 @@ func (repository diffRepository) GetNewDiffs(minID, limit int) ([]types.Persiste
 	var result []types.PersistedDiff
 	err := repository.db.Select(
 		&result,
-		`SELECT * FROM public.storage_diff WHERE (status = $1 OR status = $2) AND id > $3 ORDER BY id ASC LIMIT $4`,
+		`SELECT id, address, block_height, block_hash, storage_key, storage_value, eth_node_id, status, from_backfill 
+				FROM public.storage_diff WHERE (status = $1 OR status = $2) AND id > $3 ORDER BY id ASC LIMIT $4`,
 		New, Unrecognized, minID, limit,
 	)
 	if err != nil {
