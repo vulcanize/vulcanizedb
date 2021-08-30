@@ -1,17 +1,17 @@
+⛔️ DEPRECATED: This repository is no longer maintained.
+
+This repository has been broken up into separate repositories for its different components
+
+1. The superNode functionality has been split into separate repos for the indexing and serving workflows, [here](https://github.com/vulcanize/ipld-eth-indexer) and [here](https://github.com/vulcanize/ipld-eth-server), respectively  
+2. The headerSync functionality can be found [here](https://github.com/vulcanize/eth-header-sync)  
+3. The contractWatcher functionality can be found [here](https://github.com/vulcanize/eth-contract-watcher)
+
 # Vulcanize DB
 
 [![Build Status](https://travis-ci.org/vulcanize/vulcanizedb.svg?branch=master)](https://travis-ci.org/vulcanize/vulcanizedb)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/vulcanizedb)](https://goreportcard.com/report/github.com/vulcanize/vulcanizedb)
 
 > Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
-
-## Notice
-
-This repository has been broken up into separate repositories for its different components
-
-The headerSync functionality can be found [here](https://github.com/vulcanize/eth-header-sync)  
-The contractWatcher functionality can be found [here](https://github.com/vulcanize/eth-contract-watcher)  
-The superNode functionality can be found [here](https://github.com/vulcanize/ipfs-blockchain-watcher)  
 
 ## Table of Contents
 1. [Background](#background)
